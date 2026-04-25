@@ -247,7 +247,10 @@ jobs:
 
           if [ -n "$REQUIRED_NAMES" ]; then
             echo "Monitoring required checks only."
+            echo "REQUIRED_NAMES:"
+            echo "$REQUIRED_NAMES"
             JQ_ARRAY=$(echo "$REQUIRED_NAMES" | jq -R . | jq -s . | tr -d '\n')
+            echo "JQ_ARRAY=$JQ_ARRAY"
             INCOMPLETE_JQ="[.check_runs[] | select(.name as \$n | $JQ_ARRAY | index(\$n) != null) | select(.status != \"completed\")] | length"
             CONCLUSIONS_JQ=".check_runs[] | select(.name as \$n | $JQ_ARRAY | index(\$n) != null) | select(.status == \"completed\") | .conclusion"
           else
@@ -265,11 +268,16 @@ jobs:
               exit 0
             fi
 
+            TOTAL_CHECKS=$(echo "$CHECK_RUNS_JSON" | jq '.check_runs | length')
+            echo "Iteration $i: total check runs = $TOTAL_CHECKS"
+
             INCOMPLETE=$(echo "$CHECK_RUNS_JSON" | jq "$INCOMPLETE_JQ") || {
               echo "Failed to parse check-runs response. Treating as failing."
               echo "status=failing" >> "$GITHUB_OUTPUT"
               exit 0
             }
+
+            echo "Iteration $i: incomplete required checks = $INCOMPLETE"
 
             if [ "$INCOMPLETE" -gt 0 ]; then
               echo "Waiting for ${INCOMPLETE} required check(s) to complete..."
@@ -286,15 +294,24 @@ jobs:
             exit 0
           fi
 
+          echo "--- All check runs (name | status | conclusion) ---"
+          echo "$CHECK_RUNS_JSON" | jq -r '.check_runs[] | "\(.name) | \(.status) | \(.conclusion // \"N/A\")"' || true
+          echo "----------------------------------------------------"
+
           CONCLUSIONS=$(echo "$CHECK_RUNS_JSON" | jq -r "$CONCLUSIONS_JQ") || {
             echo "Failed to parse check-runs response. Treating as failing."
             echo "status=failing" >> "$GITHUB_OUTPUT"
             exit 0
           }
 
+          echo "Filtered conclusions:"
+          echo "$CONCLUSIONS"
+
           if echo "$CONCLUSIONS" | grep -qE 'failure|cancelled|timed_out|action_required|startup_failure'; then
+            echo "Detected failing/cancelled/timed_out/action_required/startup_failure conclusion."
             echo "status=failing" >> "$GITHUB_OUTPUT"
           else
+            echo "No failing conclusions detected."
             echo "status=passing" >> "$GITHUB_OUTPUT"
           fi
 
