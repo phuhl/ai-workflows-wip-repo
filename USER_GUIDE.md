@@ -72,7 +72,7 @@ Nothing. This happens automatically when the workflow detects problems.
 
 **Workflow triggers:**
 
-- The complete gate — when CI is failing on a PR labeled `complete`.
+- The complete gate — when a CI check completes on a PR that has the `complete` label (and the associated issue has the `opencode` label).
 - The address review workflow — when `phuhl` submits a review with `changes_requested` or `commented`.
 
 **What happens when CI is failing:**
@@ -83,9 +83,9 @@ When the complete gate detects failing CI checks:
 3. It discovers the test runner, reproduces the failure locally, and fixes the root cause.
 4. It commits and pushes the fix.
 5. It runs a final local test.
-6. The `complete` label is re-added, triggering the review again.
+6. The `complete` label is re-added, which triggers another check run and the cycle repeats.
 
-> **Infinite loop risk:** If the fix does not actually resolve the CI failure (for example, because the local test environment differs from CI, or the fix introduces a new failure), this cycle repeats indefinitely. There is no retry limit in the workflow.
+> **Autofix limits:** After 3 failed fix attempts, the workflow stops trying and posts an exhaustion warning on the PR. Manual intervention is required at that point.
 
 **What happens when review comments are unresolved:**
 When `phuhl` submits a review on the PR:

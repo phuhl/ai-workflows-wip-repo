@@ -43,7 +43,8 @@ jobs:
   complete-gate:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
-      (github.event_name == 'pull_request' && github.event.label.name == 'complete')
+      (github.event_name == 'pull_request' && github.event.label.name == 'complete') ||
+      github.event_name == 'check_run'
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-complete-gate.yml@main
     secrets: inherit
 

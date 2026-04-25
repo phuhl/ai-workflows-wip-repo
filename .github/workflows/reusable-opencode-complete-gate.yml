@@ -10,7 +10,10 @@ on:
 
 jobs:
   complete-gate:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'complete'
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'pull_request' && github.event.label.name == 'complete') ||
+      github.event_name == 'check_run'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -47,19 +50,77 @@ jobs:
           done
           gh label create "autofix-exhausted" --repo "$REPO" --color "b60205" --description "Autofix retries exhausted — manual intervention required" || true
 
-      - name: Install OpenCode
-        run: npm install -g opencode-ai@1.14.24
-
       - name: Determine PR number and head SHA
         id: meta
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
           REPO: ${{ github.repository }}
         run: |
+          if [ "${{ github.event_name }}" == "check_run" ]; then
+            PR_NUMBER="${{ github.event.check_run.pull_requests[0].number }}"
+          else
+            PR_NUMBER="${{ github.event.pull_request.number || github.event.inputs.pr_number }}"
+          fi
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "head_sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid -q .headRefOid)
           echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate PR labels
+        id: validate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "${{ github.event_name }}" != "check_run" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No PR associated with this check run."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PR_LABELS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels -q '.labels[].name')
+          if ! echo "$PR_LABELS" | grep -q "^complete$"; then
+            echo "PR does not have 'complete' label."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Check associated issue for opencode label
+          PR_BODY=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body -q '.body')
+          ISSUE_NUMBERS=$(echo "$PR_BODY" | grep -oEi '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)[[:space:]]*#[0-9]+' | grep -oE '[0-9]+' || true)
+
+          if [ -n "$ISSUE_NUMBERS" ]; then
+            for ISSUE in $ISSUE_NUMBERS; do
+              ISSUE_LABELS=$(gh issue view "$ISSUE" --repo "$REPO" --json labels -q '.labels[].name' 2>/dev/null || true)
+              if echo "$ISSUE_LABELS" | grep -q "^opencode$"; then
+                echo "Associated issue #$ISSUE has 'opencode' label."
+                echo "should_run=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            done
+            echo "No associated issue has 'opencode' label."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "No associated issue found. Proceeding without opencode check."
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+
+      - name: Install OpenCode
+        if: steps.validate.outputs.should_run == 'true'
+        run: npm install -g opencode-ai@1.14.24
 
       - name: Count autofix attempts
         id: attempts
@@ -98,7 +159,7 @@ jobs:
           fi
 
       - name: Remove complete label (conflicts)
-        if: steps.mergeable.outputs.has_conflicts == 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
@@ -107,7 +168,7 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "complete"
 
       - name: Resolve merge conflicts
-        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted != 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -116,7 +177,7 @@ jobs:
           opencode run --model opencode-go/kimi-k2.6 "Load the resolve-pr-conflicts skill and run it for PR #${{ steps.meta.outputs.pr_number }}"
 
       - name: Record autofix attempt (conflicts)
-        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted != 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
@@ -130,7 +191,7 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "autofix-attempts-$NEXT"
 
       - name: Re-add complete label (conflicts)
-        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted != 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
@@ -139,7 +200,7 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "complete"
 
       - name: Post exhaustion warning (conflicts)
-        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted == 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted == 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
@@ -149,15 +210,40 @@ jobs:
           gh pr comment "$PR_NUMBER" --repo "$REPO" --body "⚠️ Autofix exhausted after 3 attempts (conflict resolution). Manual intervention required."
 
       - name: Wait for checks to finish
-        if: steps.mergeable.outputs.has_conflicts == 'false'
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.validate.outputs.should_run == 'true'
         id: ci
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
         run: |
+          # Helper: count incomplete checks excluding ourselves
+          count_incomplete() {
+            gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" \
+              --jq '[.check_runs[] | select(.status != "completed" and .name != "OpenCode — Complete Gate")] | length'
+          }
+
+          if [ "${{ github.event_name }}" == "check_run" ]; then
+            # If the triggering check failed, CI is failing regardless of other checks
+            if [ "${{ github.event.check_run.conclusion }}" != "success" ]; then
+              echo "status=failing" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            # The triggering check succeeded. Are we the last one?
+            INCOMPLETE=$(count_incomplete)
+            if [ "$INCOMPLETE" -gt 0 ]; then
+              echo "Other checks still running ($INCOMPLETE). Exiting early."
+              exit 0
+            fi
+
+            echo "status=passing" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # labeled / workflow_dispatch trigger: poll until all *other* checks finish
           for i in {1..60}; do
-            INCOMPLETE=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq '[.check_runs[] | select(.status != "completed")] | length')
+            INCOMPLETE=$(count_incomplete)
             if [ "$INCOMPLETE" -gt 0 ]; then
               echo "Waiting for ${INCOMPLETE} check(s) to complete..."
               sleep 10
@@ -166,7 +252,7 @@ jobs:
             fi
           done
 
-          CONCLUSIONS=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq '.check_runs[] | select(.status == "completed") | .conclusion')
+          CONCLUSIONS=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq '.check_runs[] | select(.status == "completed" and .name != "OpenCode — Complete Gate") | .conclusion')
           if echo "$CONCLUSIONS" | grep -qE 'failure|cancelled|timed_out'; then
             echo "status=failing" >> "$GITHUB_OUTPUT"
           else
@@ -174,7 +260,7 @@ jobs:
           fi
 
       - name: Remove complete label (CI failing)
-        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
@@ -183,7 +269,7 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "complete"
 
       - name: Run fix-pr skill (CI failing)
-        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -192,7 +278,7 @@ jobs:
           opencode run --model opencode-go/kimi-k2.6 "Load the fix-pr skill and run it for PR #${{ steps.meta.outputs.pr_number }} with context ci-failing"
 
       - name: Record autofix attempt (CI failing)
-        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
@@ -206,7 +292,7 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "autofix-attempts-$NEXT"
 
       - name: Re-add complete label (CI failing)
-        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
@@ -215,7 +301,7 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "complete"
 
       - name: Post exhaustion warning (CI failing)
-        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted == 'true'
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted == 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
@@ -225,7 +311,7 @@ jobs:
           gh pr comment "$PR_NUMBER" --repo "$REPO" --body "⚠️ Autofix exhausted after 3 attempts (CI failing). Manual intervention required."
 
       - name: Run review-pr skill (CI passing)
-        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'passing'
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'passing' && steps.validate.outputs.should_run == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -234,7 +320,7 @@ jobs:
           opencode run --model opencode-go/kimi-k2.6 "Load the review-pr skill and run it for PR #${{ steps.meta.outputs.pr_number }}"
 
       - name: Reset autofix attempt labels
-        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'passing'
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'passing' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
