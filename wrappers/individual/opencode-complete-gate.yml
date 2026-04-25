@@ -1,0 +1,17 @@
+name: OpenCode — Complete Gate
+
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to check'
+        required: true
+
+jobs:
+  complete-gate:
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-complete-gate.yml@main
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}

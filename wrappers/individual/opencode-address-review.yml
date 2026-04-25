@@ -1,0 +1,17 @@
+name: OpenCode — Address Review
+
+on:
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to fix'
+        required: true
+
+jobs:
+  address-review:
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-address-review.yml@main
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}

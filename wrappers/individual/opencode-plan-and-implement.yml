@@ -1,0 +1,17 @@
+name: OpenCode — Plan and Implement
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+
+jobs:
+  plan-and-implement:
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-plan-and-implement.yml@main
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}

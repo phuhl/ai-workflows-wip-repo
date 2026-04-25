@@ -1,0 +1,73 @@
+name: OpenCode — Code Review
+
+on:
+  workflow_call:
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      OPENCODE_API_KEY:
+        required: true
+
+jobs:
+  code-review:
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '/oc code-review') &&
+       github.actor == 'phuhl')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+      contents: read
+    steps:
+      - name: Assert this is a PR comment
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          if [ -z "${{ github.event.issue.pull_request }}" ]; then
+            echo "This workflow only runs on PR comments, not issue comments."
+            exit 1
+          fi
+          echo "Confirmed: comment is on a PR."
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout shared workflows
+        uses: actions/checkout@v4
+        with:
+          repository: apparts-js/ai-workflows
+          path: .ai-workflows
+          persist-credentials: false
+
+      - name: Bootstrap skills
+        run: |
+          bash .ai-workflows/scripts/bootstrap-skills.sh \
+            --shared-dir .ai-workflows/.opencode/skills \
+            --local-dir .opencode/skills \
+            --out-dir .opencode/skills
+
+      - name: Install OpenCode
+        run: npm install -g opencode-ai@1.14.24
+
+      - name: Run review-pr skill
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
+        run: |
+          PR="${{ github.event.issue.number || github.event.inputs.pr_number }}"
+          COMMENT="${{ github.event.comment.id || github.event.inputs.comment_id }}"
+          opencode run --model opencode-go/kimi-k2.6 "Load the review-pr skill and run it for PR #${PR} with comment ID ${COMMENT}"
+
+      - name: React to triggering PR comment
+        if: success() && github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+        run: |
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}/reactions" -f content="+1" || true
