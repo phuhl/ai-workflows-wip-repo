@@ -72,6 +72,14 @@ cp wrappers/individual/opencode-plan-and-implement.yml <target-repo>/.github/wor
 
 Each wrapper declares only the permissions that specific workflow needs.
 
+> **Important:** The `opencode-complete-gate.yml` wrapper includes a `workflow_run` trigger that listens for a specific CI workflow to complete:
+> ```yaml
+> workflow_run:
+>   workflows: ["Run API Tests"]
+>   types: [completed]
+> ```
+> You **must** change `"Run API Tests"` to the name of your repository's **longest-running required status check**. The gate uses this trigger to know when to evaluate CI results. If you listen to a short workflow, the gate may run before other checks finish, causing concurrent or premature execution. If you do not have a suitable workflow or prefer not to use `workflow_run`, you can remove it — the gate will still work via the `pull_request: labeled` trigger (when the `auto-review` label is added).
+
 ### Optional local skill references
 
 For repo-specific checklists that override or extend the generic skills, add:

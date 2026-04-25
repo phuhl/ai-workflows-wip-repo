@@ -53,7 +53,6 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'pull_request' && github.event.label.name == 'auto-review') ||
-      github.event_name == 'check_run' ||
       github.event_name == 'workflow_run'
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-complete-gate.yml@master
     secrets: inherit

@@ -56,10 +56,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
-          if [ "${{ github.event_name }}" == "check_run" ]; then
-            PR_NUMBER="${{ github.event.check_run.pull_requests[0].number }}"
-            HEAD_SHA="${{ github.event.check_run.head_sha }}"
-          elif [ "${{ github.event_name }}" == "workflow_run" ]; then
+          if [ "${{ github.event_name }}" == "workflow_run" ]; then
             PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
             HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
           else
@@ -90,13 +87,8 @@ jobs:
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
           REPO: ${{ github.repository }}
         run: |
-          if [ "${{ github.event_name }}" != "check_run" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
           if [ -z "$PR_NUMBER" ]; then
-            echo "No PR associated with this check run."
+            echo "No PR number found."
             echo "should_run=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -246,55 +238,7 @@ jobs:
             CONCLUSIONS_JQ=".check_runs[] | select(.status == \"completed\" and (.name | startswith(\"OpenCode\") | not)) | .conclusion"
           fi
 
-          if [ "${{ github.event_name }}" == "check_run" ]; then
-            # If the triggering check failed, CI is failing regardless of other checks
-            if [ "${{ github.event.check_run.conclusion }}" != "success" ]; then
-              echo "status=failing" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-
-            # Are all required checks done?
-            INCOMPLETE=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq "$INCOMPLETE_JQ")
-            if [ "$INCOMPLETE" -gt 0 ]; then
-              echo "Required checks still running ($INCOMPLETE). Exiting early."
-              exit 0
-            fi
-
-            # Check conclusions of all completed checks
-            CONCLUSIONS=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq "$CONCLUSIONS_JQ")
-            if echo "$CONCLUSIONS" | grep -qE 'failure|cancelled|timed_out'; then
-              echo "status=failing" >> "$GITHUB_OUTPUT"
-            else
-              echo "status=passing" >> "$GITHUB_OUTPUT"
-            fi
-            exit 0
-          fi
-
-          if [ "${{ github.event_name }}" == "workflow_run" ]; then
-            # If the triggering workflow failed, CI is failing regardless of other checks
-            if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
-              echo "status=failing" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-
-            # Are all required checks done?
-            INCOMPLETE=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq "$INCOMPLETE_JQ")
-            if [ "$INCOMPLETE" -gt 0 ]; then
-              echo "Required checks still running ($INCOMPLETE). Exiting early."
-              exit 0
-            fi
-
-            # Check conclusions of all completed checks
-            CONCLUSIONS=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq "$CONCLUSIONS_JQ")
-            if echo "$CONCLUSIONS" | grep -qE 'failure|cancelled|timed_out'; then
-              echo "status=failing" >> "$GITHUB_OUTPUT"
-            else
-              echo "status=passing" >> "$GITHUB_OUTPUT"
-            fi
-            exit 0
-          fi
-
-          # labeled / workflow_dispatch trigger: poll until required checks finish
+          # Poll until required checks finish
           for i in {1..60}; do
             INCOMPLETE=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq "$INCOMPLETE_JQ")
             if [ "$INCOMPLETE" -gt 0 ]; then

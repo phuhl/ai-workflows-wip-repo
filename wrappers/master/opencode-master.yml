@@ -9,7 +9,8 @@ on:
     types: [submitted]
   pull_request:
     types: [labeled]
-  check_run:
+  workflow_run:
+    workflows: ["Run API Tests"]
     types: [completed]
   issues:
     types: [labeled]

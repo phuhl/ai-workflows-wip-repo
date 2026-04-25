@@ -41,7 +41,7 @@ Only `phuhl` can label an issue to start the workflow.
 2. It creates a branch and a **draft PR**.
 3. Before writing any code, it merges the latest base branch into the feature branch to prevent future conflicts.
 4. It writes stubs and failing tests, commits, pushes, and **stops** — all in the same session as PR creation. The workflow adds the `auto-review` label so the CI gate can monitor the build.
-5. When the gate is triggered (by CI finishing, a label change, or a check run completing), it first checks whether the implementation is finished by looking for unchecked subtasks in the issue comments.
+5. When the `auto-review` label is added to the PR, the gate triggers and first checks whether the implementation is finished by looking for unchecked subtasks in the issue comments.
 6. If any subtasks are still open, the gate **removes the `auto-review` label** and hands off back to the AI to resume implementation — regardless of whether CI passed or failed.
 7. It implements the remaining subtasks, commits and pushes after each one.
 8. Before finishing, it runs a self-check by auditing its own code with the same checks used in code review. It looks for test coverage gaps, correctness issues, and guideline violations. Any `must-fix` finding is fixed, committed, and re-checked before proceeding.
@@ -99,7 +99,7 @@ Nothing. This happens automatically when the workflow detects problems.
 
 **Workflow triggers:**
 
-- **`reusable-opencode-complete-gate.yml`** — when a CI check completes on a PR that has the `auto-review` label (and the associated issue has the `opencode` label).
+- **`reusable-opencode-complete-gate.yml`** — when the `auto-review` label is added to a PR.
 - **`reusable-opencode-address-review.yml`** — when `phuhl` submits a review with `changes_requested` or `commented`.
 - **`reusable-opencode-fix-pr.yml`** — when `phuhl` comments `/oc fix-pr` on a PR.
 
