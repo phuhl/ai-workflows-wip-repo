@@ -41,8 +41,17 @@ jobs:
           git config user.name "opencode[bot]"
           git config user.email "opencode[bot]@users.noreply.github.com"
 
-      - name: Install OpenCode
-        run: npm install -g opencode-ai@1.14.24
+      - name: Create progress comment
+        id: progress_comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${ISSUE}/comments" \
+            --jq '.id' \
+            -f body="🤖 **OpenCode is planning and implementing this issue...**\n\nThe plan-and-implement skill has started. This comment will be updated when the run completes." || echo "")
+          echo "comment_id=${COMMENT_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Remove auto-review label
         env:
@@ -76,3 +85,21 @@ jobs:
             gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label auto-review
             gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "ready for review" || true
           fi
+
+      - name: Update progress comment
+        if: always() && steps.progress_comment.outputs.comment_id != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS="✅ **OpenCode plan-and-implement finished**"
+          elif [ "${{ job.status }}" == "failure" ]; then
+            STATUS="❌ **OpenCode plan-and-implement failed**"
+          else
+            STATUS="⚠️ **OpenCode plan-and-implement ended**"
+          fi
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" \
+            -X PATCH \
+            -f body="${STATUS}\n\n_Run ID: ${{ github.run_id }}_" || true

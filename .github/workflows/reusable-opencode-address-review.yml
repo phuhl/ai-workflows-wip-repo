@@ -42,6 +42,18 @@ jobs:
           git config user.name "opencode[bot]"
           git config user.email "opencode[bot]@users.noreply.github.com"
 
+      - name: Create progress comment
+        id: progress_comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.id' \
+            -f body="🤖 **OpenCode is addressing review comments on this PR...**\n\nThe address-review workflow has started. This comment will be updated when the run completes." || echo "")
+          echo "comment_id=${COMMENT_ID}" >> "$GITHUB_OUTPUT"
+
       - name: Remove auto-review label
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,3 +82,21 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "auto-review"
+
+      - name: Update progress comment
+        if: always() && steps.progress_comment.outputs.comment_id != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS="✅ **OpenCode address-review finished**"
+          elif [ "${{ job.status }}" == "failure" ]; then
+            STATUS="❌ **OpenCode address-review failed**"
+          else
+            STATUS="⚠️ **OpenCode address-review ended**"
+          fi
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" \
+            -X PATCH \
+            -f body="${STATUS}\n\n_Run ID: ${{ github.run_id }}_" || true

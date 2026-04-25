@@ -121,6 +121,19 @@ jobs:
           echo "No associated issue found. Proceeding without opencode check."
           echo "should_run=true" >> "$GITHUB_OUTPUT"
 
+      - name: Create progress comment
+        if: steps.validate.outputs.should_run == 'true'
+        id: progress_comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.id' \
+            -f body="🤖 **OpenCode Complete Gate is processing this PR...**\n\nThe auto-review gate has started evaluating this PR. This comment will be updated when processing completes." || echo "")
+          echo "comment_id=${COMMENT_ID}" >> "$GITHUB_OUTPUT"
+
       - name: Install OpenCode
         if: steps.validate.outputs.should_run == 'true'
         run: npm install -g opencode-ai@1.14.24
@@ -291,6 +304,22 @@ jobs:
             echo "No unchecked subtasks found"
           fi
 
+      - name: Echo collected variables for debugging
+        if: steps.validate.outputs.should_run == 'true'
+        run: |
+          echo "=== OpenCode Complete Gate Variables ==="
+          echo "pr_number=${{ steps.meta.outputs.pr_number }}"
+          echo "head_sha=${{ steps.meta.outputs.head_sha }}"
+          echo "should_run=${{ steps.validate.outputs.should_run }}"
+          echo "attempts_count=${{ steps.attempts.outputs.count }}"
+          echo "attempts_exhausted=${{ steps.attempts.outputs.exhausted }}"
+          echo "merge_state=${{ steps.mergeable.outputs.merge_state }}"
+          echo "has_conflicts=${{ steps.mergeable.outputs.has_conflicts }}"
+          echo "ci_status=${{ steps.ci.outputs.status }}"
+          echo "implementation_complete=${{ steps.completeness.outputs.implementation_complete }}"
+          echo "issue_number=${{ steps.completeness.outputs.issue_number }}"
+          echo "========================================="
+
       - name: Remove auto-review label (CI failing)
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
         env:
@@ -395,3 +424,47 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "ready for review"
+
+      - name: Update progress comment with final status
+        if: always() && steps.validate.outputs.should_run == 'true' && steps.progress_comment.outputs.comment_id != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS="✅ **OpenCode Complete Gate finished**"
+          elif [ "${{ job.status }}" == "failure" ]; then
+            STATUS="❌ **OpenCode Complete Gate failed**"
+          else
+            STATUS="⚠️ **OpenCode Complete Gate ended**"
+          fi
+
+          DETAILS=""
+          HAS_CONFLICTS="${{ steps.mergeable.outputs.has_conflicts }}"
+          CI_STATUS="${{ steps.ci.outputs.status }}"
+          EXHAUSTED="${{ steps.attempts.outputs.exhausted }}"
+          IMPL_COMPLETE="${{ steps.completeness.outputs.implementation_complete }}"
+          ISSUE_NUM="${{ steps.completeness.outputs.issue_number }}"
+
+          if [ "$HAS_CONFLICTS" == "true" ]; then
+            if [ "$EXHAUSTED" == "true" ]; then
+              DETAILS="Merge conflicts detected. Autofix exhausted after 3 attempts. Manual intervention required."
+            else
+              DETAILS="Merge conflicts detected. Attempted conflict resolution (attempt ${{ steps.attempts.outputs.count }} of 3)."
+            fi
+          elif [ "$CI_STATUS" == "failing" ]; then
+            if [ "$EXHAUSTED" == "true" ]; then
+              DETAILS="CI is failing. Autofix exhausted after 3 attempts. Manual intervention required."
+            elif [ "$IMPL_COMPLETE" == "false" ]; then
+              DETAILS="CI is failing and implementation is incomplete. Triggered plan-and-implement for issue #${ISSUE_NUM}."
+            else
+              DETAILS="CI is failing. Triggered fix-pr (attempt ${{ steps.attempts.outputs.count }} of 3)."
+            fi
+          elif [ "$CI_STATUS" == "passing" ]; then
+            DETAILS="CI is passing. Triggered review-pr."
+          fi
+
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" \
+            -X PATCH \
+            -f body="${STATUS}\n\n${DETAILS}\n\n_Run ID: ${{ github.run_id }}_" || true
