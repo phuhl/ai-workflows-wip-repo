@@ -214,12 +214,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
         run: |
-          # Helper: count incomplete checks excluding ourselves
-          count_incomplete() {
-            gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" \
-              --jq '[.check_runs[] | select(.status != "completed" and (.name | startswith("OpenCode") | not))] | length'
-          }
+          # Fetch required check names from branch protection (if available)
+          BASE_BRANCH=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json baseRefName -q .baseRefName)
+          REQUIRED_NAMES=$(gh api "repos/${REPO}/branches/${BASE_BRANCH}/protection/required_status_checks" \
+            --jq '((.contexts // []) + ([.checks[]?.context] // [])) | .[]' 2>/dev/null | sort -u || true)
+
+          if [ -n "$REQUIRED_NAMES" ]; then
+            echo "Monitoring required checks only."
+            JQ_ARRAY=$(echo "$REQUIRED_NAMES" | jq -R . | jq -s . | tr -d '\n')
+            INCOMPLETE_JQ="[.check_runs[] | select(.name as \$n | $JQ_ARRAY | index(\$n) != null) | select(.status != \"completed\")] | length"
+            CONCLUSIONS_JQ=".check_runs[] | select(.name as \$n | $JQ_ARRAY | index(\$n) != null) | select(.status == \"completed\") | .conclusion"
+          else
+            echo "No required checks found (or no permission). Monitoring all non-OpenCode checks."
+            INCOMPLETE_JQ="[.check_runs[] | select(.status != \"completed\" and (.name | startswith(\"OpenCode\") | not))] | length"
+            CONCLUSIONS_JQ=".check_runs[] | select(.status == \"completed\" and (.name | startswith(\"OpenCode\") | not)) | .conclusion"
+          fi
 
           if [ "${{ github.event_name }}" == "check_run" ]; then
             # If the triggering check failed, CI is failing regardless of other checks
@@ -228,10 +239,10 @@ jobs:
               exit 0
             fi
 
-            # The triggering check succeeded. Are we the last one?
-            INCOMPLETE=$(count_incomplete)
+            # Are all required checks done?
+            INCOMPLETE=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq "$INCOMPLETE_JQ")
             if [ "$INCOMPLETE" -gt 0 ]; then
-              echo "Other checks still running ($INCOMPLETE). Exiting early."
+              echo "Required checks still running ($INCOMPLETE). Exiting early."
               exit 0
             fi
 
@@ -239,18 +250,18 @@ jobs:
             exit 0
           fi
 
-          # labeled / workflow_dispatch trigger: poll until all *other* checks finish
+          # labeled / workflow_dispatch trigger: poll until required checks finish
           for i in {1..60}; do
-            INCOMPLETE=$(count_incomplete)
+            INCOMPLETE=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq "$INCOMPLETE_JQ")
             if [ "$INCOMPLETE" -gt 0 ]; then
-              echo "Waiting for ${INCOMPLETE} check(s) to complete..."
+              echo "Waiting for ${INCOMPLETE} required check(s) to complete..."
               sleep 10
             else
               break
             fi
           done
 
-          CONCLUSIONS=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq '.check_runs[] | select(.status == "completed" and (.name | startswith("OpenCode") | not)) | .conclusion')
+          CONCLUSIONS=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq "$CONCLUSIONS_JQ")
           if echo "$CONCLUSIONS" | grep -qE 'failure|cancelled|timed_out'; then
             echo "status=failing" >> "$GITHUB_OUTPUT"
           else
