@@ -19,9 +19,9 @@ You are invoked to drive an issue labeled `opencode` to completion.
    REPO=$(git remote get-url origin | sed -E 's/.*github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/\1\/\2/')
    OWNER=$(echo "$REPO" | cut -d/ -f1)
    ```
-2. Fetch the issue:
-   ```mcp
-   get_issue(issue_number=$ARGUMENTS)
+2. Fetch the issue body:
+   ```bash
+   gh issue view "$ARGUMENTS" --json body,title,state -q '.body'
    ```
 
 ## State detection
@@ -45,7 +45,10 @@ If no subtasks exist, decompose the issue into small, committable steps. Append:
 - [ ] CI passes and PR is ready for review
 ```
 
-Update the issue body with `update_issue`.
+Update the issue body:
+```bash
+gh issue edit "$ARGUMENTS" --body "..."
+```
 
 ## Create PR
 
@@ -58,14 +61,16 @@ git push -u origin ${ARGUMENTS}-<short-slug>
 ```
 
 Create a draft PR:
-```mcp
-create_pull_request(
-  title="<concise title>",
-  body="Work in progress — see issue #${ARGUMENTS} for context.\n\nCloses #${ARGUMENTS}",
-  head="${ARGUMENTS}-<short-slug>",
-  base="master",
-  draft=true
-)
+```bash
+PR_BODY="Work in progress — see issue #${ARGUMENTS} for context.
+
+Closes #${ARGUMENTS}"
+gh pr create \
+  --draft \
+  --title "<concise title>" \
+  --body "$PR_BODY" \
+  --head "${ARGUMENTS}-<short-slug>" \
+  --base master
 ```
 
 Check off "Open draft PR" in the issue.
@@ -100,13 +105,13 @@ Before starting any work on an existing branch, keep it up to date with its base
 ## Implement
 
 Find the open PR:
-```mcp
-list_pull_requests(head="${OWNER}:${ARGUMENTS}-*", state="open")
+```bash
+PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
 ```
 
-Record `pr_number`. **Before starting work**, remove the `complete` label:
-```mcp
-remove_labels_from_pr(pr_number=<pr_number>, labels=["complete"])
+**Before starting work**, remove the `complete` label:
+```bash
+gh pr edit "$PR_NUMBER" --remove-label complete
 ```
 
 For each unchecked subtask up to "Fix issues found in audit":
@@ -119,9 +124,9 @@ For each unchecked subtask up to "Fix issues found in audit":
    git push
    ```
 4. Update the issue checkbox:
-   - Fetch current body with `get_issue(issue_number=$ARGUMENTS)`.
-   - Replace `- [ ] <exact text>` with `- [x] <exact text>`.
-   - Update with `update_issue(issue_number=$ARGUMENTS, body="...")`.
+    - Fetch current body: `gh issue view "$ARGUMENTS" --json body -q '.body'`
+    - Replace `- [ ] <exact text>` with `- [x] <exact text>`.
+    - Apply the update: `gh issue edit "$ARGUMENTS" --body "..."`
 
 ## Self-check before finalizing
 
@@ -155,10 +160,13 @@ Before promoting the PR, run the same audits that `review-pr` runs and fix any `
 
 When all subtasks are checked and the self-check is clean:
 1. Merge base branch one final time (same steps as above) to ensure the PR is up to date.
-2. Update the PR body with a reviewer summary using `update_pull_request`.
+2. Update the PR body with a reviewer summary:
+   ```bash
+   gh pr edit "$PR_NUMBER" --body "..."
+   ```
 3. Add the `complete` label to trigger the CI gate and automatic review:
-   ```mcp
-   add_labels_to_pr(pr_number=<pr_number>, labels=["complete"])
+   ```bash
+   gh pr edit "$PR_NUMBER" --add-label complete
    ```
    **Leave the PR as draft.** The `review-pr` skill will promote it to ready only if the automatic audits pass cleanly.
 

@@ -15,8 +15,8 @@ Parse `$ARGUMENTS` as: `<pr-number> <context>` where context is `ci-failing` or 
 ## Setup
 
 1. Fetch PR metadata (note `base.ref` and `head.ref`):
-   ```mcp
-   get_pull_request(pr_number=<pr-number>)
+   ```bash
+   gh pr view <pr-number> --json baseRefName,headRefName,title,body
    ```
 2. Check out the branch and merge the latest base:
    ```bash
@@ -71,19 +71,17 @@ If context is `review-comments`:
    list_pull_request_reviews(pr_number=<pr-number>)
    ```
 2. For each unresolved comment:
-   - **Code change**: make change, run tests, commit `fix: address review comment – <description>`.
-   - **Question**: reply via `add_issue_comment(issue_number=<pr-number>, body="...")`.
-   - **Outdated**: ignore.
+    - **Code change**: make change, run tests, commit `fix: address review comment – <description>`.
+    - **Question**: reply via `gh pr comment <pr-number> --body "..."`.
+    - **Outdated**: ignore.
 3. Push:
    ```bash
    git push
    ```
 4. Post summary:
-   ```mcp
-   add_issue_comment(
-     issue_number=<pr-number>,
-     body="All review comments addressed. Changes made:\n- <bullet list>"
-   )
+   ```bash
+   gh pr comment <pr-number> --body "All review comments addressed. Changes made:
+- <bullet list>"
    ```
 
 ## After fixing
