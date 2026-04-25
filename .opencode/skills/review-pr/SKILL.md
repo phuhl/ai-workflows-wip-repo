@@ -42,16 +42,27 @@ Parse `$ARGUMENTS` as: `<pr-number>`. The calling workflow may also pass a `<com
 1. Parse findings from all three audit outputs. Look for:
    - `**File:** path/to/file.ts, line N` (legacy format)
    - `**file:** path/to/file.ts` + `**line:** N` (structured Actionable findings format)
-2. For each finding that maps to a line in the PR diff:
-   - Post an inline review comment on the head SHA using `create_pull_request_review_comment` with `side="RIGHT"`.
-3. Collect any non-diff findings (including general recommendations and non-line-specific issues) into a general PR comment via `add_issue_comment`.
+2. For each finding that maps to a line in the PR diff, post an inline review comment on the head SHA with `side="RIGHT"`:
+    ```bash
+    bash .opencode/skills/review-pr/scripts/post-review-comment.sh \
+      <pr-number> \
+      <head-sha> \
+      "path/to/file.ts" \
+      <line-number> \
+      RIGHT \
+      "Comment body"
+    ```
+3. Collect any non-diff findings (including general recommendations and non-line-specific issues) into a general PR comment:
+    ```bash
+    gh pr comment <pr-number> --body "General findings ..."
+    ```
 
 ## Finalize
 
 - If **no findings** were posted:
   - Promote PR to ready for review:
-    ```mcp
-    update_pull_request(pr_number=<pr-number>, draft=false)
+    ```bash
+    gh pr ready <pr-number>
     ```
 - If findings were posted, leave the PR state as-is so the author can fix them.
 
