@@ -218,7 +218,7 @@ jobs:
           # Helper: count incomplete checks excluding ourselves
           count_incomplete() {
             gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" \
-              --jq '[.check_runs[] | select(.status != "completed" and .name != "OpenCode — Complete Gate")] | length'
+              --jq '[.check_runs[] | select(.status != "completed" and (.name | startswith("OpenCode") | not))] | length'
           }
 
           if [ "${{ github.event_name }}" == "check_run" ]; then
@@ -250,7 +250,7 @@ jobs:
             fi
           done
 
-          CONCLUSIONS=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq '.check_runs[] | select(.status == "completed" and .name != "OpenCode — Complete Gate") | .conclusion')
+          CONCLUSIONS=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq '.check_runs[] | select(.status == "completed" and (.name | startswith("OpenCode") | not)) | .conclusion')
           if echo "$CONCLUSIONS" | grep -qE 'failure|cancelled|timed_out'; then
             echo "status=failing" >> "$GITHUB_OUTPUT"
           else
