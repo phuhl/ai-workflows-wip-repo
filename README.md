@@ -11,6 +11,7 @@ This repository centralizes all repository-generic AI automation so individual r
 ```
 apparts-js/ai-workflows/
 ├── .github/workflows/          # Reusable workflows consumed by target repos
+│   ├── reusable-opencode-master.yml   # master router — calls the ones below
 │   ├── reusable-opencode.yml
 │   ├── reusable-opencode-address-review.yml
 │   ├── reusable-opencode-code-review.yml
