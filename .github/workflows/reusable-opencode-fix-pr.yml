@@ -7,7 +7,7 @@ on:
         required: true
 
 jobs:
-  fix-pr:
+  opencode-fix-pr:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'issue_comment' &&

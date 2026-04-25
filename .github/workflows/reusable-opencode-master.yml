@@ -7,7 +7,7 @@ on:
         required: true
 
 jobs:
-  opencode:
+  opencode-dispatcher:
     if: |
       (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
       (contains(github.event.comment.body, ' /oc') ||
@@ -20,7 +20,7 @@ jobs:
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode.yml@master
     secrets: inherit
 
-  fix-pr:
+  opencode-fix-pr:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'issue_comment' &&
@@ -30,7 +30,7 @@ jobs:
     uses: ./.github/workflows/reusable-opencode-fix-pr.yml
     secrets: inherit
 
-  code-review:
+  opencode-code-review:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'issue_comment' &&
@@ -40,7 +40,7 @@ jobs:
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-code-review.yml@master
     secrets: inherit
 
-  address-review:
+  opencode-address-review:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'pull_request_review' &&
@@ -49,7 +49,7 @@ jobs:
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-address-review.yml@master
     secrets: inherit
 
-  complete-gate:
+  opencode-complete-gate:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'pull_request' && github.event.label.name == 'auto-review') ||
@@ -61,7 +61,7 @@ jobs:
     uses: ./.github/workflows/reusable-opencode-complete-gate.yml
     secrets: inherit
 
-  plan-and-implement:
+  opencode-plan-and-implement:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'issues' && github.event.label.name == 'opencode' && github.actor == 'phuhl')

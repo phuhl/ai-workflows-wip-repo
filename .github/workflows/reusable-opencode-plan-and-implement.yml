@@ -7,7 +7,7 @@ on:
         required: true
 
 jobs:
-  plan-and-implement:
+  opencode-plan-and-implement:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'issues' && github.event.label.name == 'opencode' && github.actor == 'phuhl')

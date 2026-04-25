@@ -7,7 +7,7 @@ on:
         required: true
 
 jobs:
-  code-review:
+  opencode-code-review:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'issue_comment' &&

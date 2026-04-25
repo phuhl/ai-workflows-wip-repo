@@ -244,8 +244,8 @@ jobs:
           # call always returns 403. Instead we monitor every check-run except
           # our own OpenCode workflows (to avoid dead-locking while we wait for
           # ourselves to finish).
-          INCOMPLETE_JQ='[.check_runs[] | select(.status != "completed" and (.name | startswith("OpenCode") | not))] | length'
-          CONCLUSIONS_JQ='.check_runs[] | select(.status == "completed" and (.name | startswith("OpenCode") | not)) | .conclusion'
+          INCOMPLETE_JQ='[.check_runs[] | select(.status != "completed" and (.name | ascii_downcase | contains("opencode") | not))] | length'
+          CONCLUSIONS_JQ='.check_runs[] | select(.status == "completed" and (.name | ascii_downcase | contains("opencode") | not)) | .conclusion'
 
           echo "INCOMPLETE_JQ: $INCOMPLETE_JQ"
           echo "CONCLUSIONS_JQ: $CONCLUSIONS_JQ"
