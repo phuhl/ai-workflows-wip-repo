@@ -14,7 +14,7 @@ on:
 
 jobs:
   code-review:
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-code-review.yml@main
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-code-review.yml@master
     secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}

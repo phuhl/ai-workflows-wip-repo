@@ -18,7 +18,7 @@ jobs:
        startsWith(github.event.comment.body, '/opencode')) &&
       !contains(github.event.comment.body, '/oc code-review') &&
       github.actor == 'phuhl'
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode.yml@main
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode.yml@master
     secrets: inherit
 
   code-review:
@@ -28,7 +28,7 @@ jobs:
        github.event.issue.pull_request &&
        contains(github.event.comment.body, '/oc code-review') &&
        github.actor == 'phuhl')
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-code-review.yml@main
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-code-review.yml@master
     secrets: inherit
 
   address-review:
@@ -37,7 +37,7 @@ jobs:
       (github.event_name == 'pull_request_review' &&
        github.event.review.user.login == 'phuhl' &&
        (github.event.review.state == 'changes_requested' || github.event.review.state == 'commented'))
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-address-review.yml@main
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-address-review.yml@master
     secrets: inherit
 
   complete-gate:
@@ -45,12 +45,12 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'pull_request' && github.event.label.name == 'complete') ||
       github.event_name == 'check_run'
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-complete-gate.yml@main
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-complete-gate.yml@master
     secrets: inherit
 
   plan-and-implement:
     if: |
       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
       (github.event_name == 'issues' && github.event.label.name == 'opencode' && github.actor == 'phuhl')
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-plan-and-implement.yml@main
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-plan-and-implement.yml@master
     secrets: inherit

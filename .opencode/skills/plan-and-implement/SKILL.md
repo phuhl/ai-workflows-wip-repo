@@ -52,7 +52,7 @@ Update the issue body with `update_issue`.
 If no branch/PR exists:
 ```bash
 git fetch origin
-git checkout main && git pull
+git checkout master && git pull
 git checkout -b ${ARGUMENTS}-<short-slug>
 git push -u origin ${ARGUMENTS}-<short-slug>
 ```
@@ -63,7 +63,7 @@ create_pull_request(
   title="<concise title>",
   body="Work in progress — see issue #${ARGUMENTS} for context.\n\nCloses #${ARGUMENTS}",
   head="${ARGUMENTS}-<short-slug>",
-  base="main",
+  base="master",
   draft=true
 )
 ```
@@ -129,7 +129,7 @@ Before promoting the PR, run the same audits that `review-pr` runs and fix any `
 
 1. Determine the diff range:
    ```bash
-   BASE=$(git merge-base origin/main HEAD)
+   BASE=$(git merge-base origin/master HEAD)
    RANGE="${BASE}..HEAD"
    ```
 2. Run the three audit skills and capture their outputs:

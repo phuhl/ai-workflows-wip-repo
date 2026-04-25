@@ -49,7 +49,7 @@ conventions below.
    - If `$ARGUMENTS` looks like a PR number (digits only), fetch the PR
      metadata and derive the diff range:
      ```bash
-     BASE=$(git merge-base origin/main HEAD)
+     BASE=$(git merge-base origin/master HEAD)
      RANGE="${BASE}..HEAD"
      ```
    - If `$ARGUMENTS` looks like a commit range (contains `..`), get the

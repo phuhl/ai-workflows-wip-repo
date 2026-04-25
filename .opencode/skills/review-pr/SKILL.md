@@ -17,7 +17,7 @@ Parse `$ARGUMENTS` as: `<pr-number>`. The calling workflow may also pass a `<com
 1. Fetch PR metadata and head SHA.
 2. Determine diff range:
    ```bash
-   BASE=$(git merge-base origin/main HEAD)
+   BASE=$(git merge-base origin/master HEAD)
    RANGE="${BASE}..HEAD"
    ```
 

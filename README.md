@@ -108,5 +108,5 @@ This means a target repo can override individual skills or add repo-specific ref
 ## Notes
 
 - All workflows hardcode `phuhl` as the triggering actor/reviewer for now.
-- No version pinning — target repos always pull `@main` (or the default branch).
+- No version pinning — target repos always pull `@master` (or the default branch).
 - `.claude/skills/` is out of scope.
