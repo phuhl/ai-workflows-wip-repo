@@ -15,6 +15,7 @@ jobs:
        startsWith(github.event.comment.body, '/opencode')) &&
        !contains(github.event.comment.body, '/oc code-review') &&
        !contains(github.event.comment.body, '/oc fix-pr') &&
+       !contains(github.event.comment.body, '/oc complete-gate') &&
        github.actor == 'phuhl'
     runs-on: ubuntu-latest
     permissions:
