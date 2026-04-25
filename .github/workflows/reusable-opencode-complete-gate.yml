@@ -242,8 +242,13 @@ jobs:
         run: |
           # Fetch required check names from branch protection (if available)
           BASE_BRANCH=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json baseRefName -q .baseRefName)
-          REQUIRED_NAMES=$(gh api "repos/${REPO}/branches/${BASE_BRANCH}/protection/required_status_checks" \
-            --jq '((.contexts // []) + ([.checks[]?.context] // [])) | .[]' 2>/dev/null | sort -u || true)
+          REQUIRED_NAMES=""
+          PROTECTION_JSON=$(gh api "repos/${REPO}/branches/${BASE_BRANCH}/protection/required_status_checks" 2>/dev/null || true)
+          if echo "$PROTECTION_JSON" | jq -e '.contexts' > /dev/null 2>&1; then
+            REQUIRED_NAMES=$(echo "$PROTECTION_JSON" | jq -r '((.contexts // []) + ([.checks[]?.context] // [])) | .[]' 2>/dev/null | sort -u || true)
+          else
+            echo "Could not fetch required status checks (API response: $(echo "$PROTECTION_JSON" | jq -r '.message // \"unknown\"')). Falling back to all checks."
+          fi
 
           if [ -n "$REQUIRED_NAMES" ]; then
             echo "Monitoring required checks only."
@@ -294,9 +299,9 @@ jobs:
             exit 0
           fi
 
-          echo "--- All check runs (name | status | conclusion) ---"
-          echo "$CHECK_RUNS_JSON" | jq -r '.check_runs[] | "\(.name) | \(.status) | \(.conclusion // \"N/A\")"' || true
-          echo "----------------------------------------------------"
+          echo "--- All check runs ---"
+          echo "$CHECK_RUNS_JSON" | jq -r '[.check_runs[] | {name, status, conclusion}] | .[]' || true
+          echo "----------------------"
 
           CONCLUSIONS=$(echo "$CHECK_RUNS_JSON" | jq -r "$CONCLUSIONS_JQ") || {
             echo "Failed to parse check-runs response. Treating as failing."
