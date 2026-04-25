@@ -46,31 +46,15 @@ Repeat until the rebase completes. If the result looks wrong at any point (logic
 git rebase --abort
 ```
 
-## Step 3 — Verify correctness
+## Step 3 — Push the rebased branch
 
-Run the full test suite to catch any regressions from the resolution:
-
-```bash
-TEST_CMD=$(python .opencode/skills/resolve-pr-conflicts/scripts/detect_test_runner.py)
-$TEST_CMD
-```
-
-Fix any regressions with their own commit, staging only changed files:
-
-```bash
-git add <specific-files>
-git commit -m "fix: post-rebase corrections"
-```
-
-## Step 4 — Force-push
-
-A rebase rewrites history, so a force-push is required. `--force-with-lease` is safer than `--force` — it refuses if someone else pushed to the branch since your last fetch:
+After the rebase completes successfully, push the rewritten history. If any regressions are discovered later by CI, they will be handled by the complete-gate workflow.
 
 ```bash
 git push --force-with-lease
 ```
 
-## Step 5 — Confirm the PR is now mergeable
+## Step 4 — Confirm the PR is now mergeable
 
 ```bash
 gh pr view <pr-number> --json mergeable,mergeStateStatus

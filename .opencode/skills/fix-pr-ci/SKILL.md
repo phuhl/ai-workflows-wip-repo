@@ -47,12 +47,7 @@ Work through each failure type:
 gh run rerun <run-id> --failed
 ```
 
-Before pushing, run tests locally to confirm green. Get the test command:
-
-```bash
-TEST_CMD=$(python .opencode/skills/fix-pr-ci/scripts/detect_test_runner.py)
-$TEST_CMD
-```
+After applying fixes, stage and push. **Do not run tests locally.**
 
 Stage only the files you changed (avoid accidentally staging secrets):
 

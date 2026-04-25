@@ -70,6 +70,8 @@ gh pr create \
   --body "$PR_BODY" \
   --head "${ARGUMENTS}-<short-slug>" \
   --base master
+
+PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
 ```
 
 Check off "Open draft PR" in the subtasks comment (do not modify the issue body).
@@ -108,30 +110,39 @@ Find the open PR:
 PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
 ```
 
-**Before starting work**, remove the `complete` label:
-```bash
-gh pr edit "$PR_NUMBER" --remove-label complete
-```
+### Write stubs and failing tests
+If this subtask is unchecked:
+1. Write stubs and failing tests.
+2. Commit and push:
+   ```bash
+   git add <specific-files>
+   git commit -m "feat: add stubs and failing tests (#${ARGUMENTS})"
+   git push
+   ```
+3. Check off the subtask in the comments.
+4. **Stop.** Do not proceed to the next subtask in this session. The workflow will re-add the `complete` label and the gate will monitor CI. If it fails, `fix-pr` will hand off back here.
 
-For each unchecked subtask up to "Fix issues found in audit":
-1. Do the work (TDD: stubs + failing tests → implement → refactor).
-2. Run tests locally.
-3. Commit and push:
+### Remaining subtasks
+If "Write stubs and failing tests" is already checked, proceed with the remaining unchecked subtasks up to "Fix issues found in audit":
+1. Do the work (implement → refactor → docs).
+2. Commit and push:
    ```bash
    git add <specific-files>
    git commit -m "feat: <description> (#${ARGUMENTS})"
    git push
    ```
-4. Update the subtasks comment checkbox:
-    - Read all comments to find the one containing `## Subtasks`:
-      ```bash
-      gh issue view "$ARGUMENTS" --json comments -q '.comments[] | select(.body | contains("## Subtasks")) | {id,body}'
-      ```
-    - Replace `- [ ] <exact text>` with `- [x] <exact text>` inside that comment body.
-    - Edit the comment via the API (preserving the original issue body):
-      ```bash
-      gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="${UPDATED_COMMENT_BODY}"
-      ```
+3. Check off the subtask in the comments.
+
+For each subtask, update the subtasks comment:
+- Read all comments to find the one containing `## Subtasks`:
+  ```bash
+  gh issue view "$ARGUMENTS" --json comments -q '.comments[] | select(.body | contains("## Subtasks")) | {id,body}'
+  ```
+- Replace `- [ ] <exact text>` with `- [x] <exact text>` inside that comment body.
+- Edit the comment via the API (preserving the original issue body):
+  ```bash
+  gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="${UPDATED_COMMENT_BODY}"
+  ```
 
 ## Self-check before finalizing
 
@@ -150,14 +161,13 @@ Before promoting the PR, run the same audits that `review-pr` runs and fix any `
    ```
 3. Parse the **Actionable findings** sections for `**severity:** must-fix`.
 4. For each `must-fix` finding:
-   - Apply the provided fix using `Write` or `Edit`.
-   - Run tests locally to confirm the fix does not break anything.
-   - Commit and push:
-     ```bash
-     git add <specific-files>
-     git commit -m "fix: resolve self-check finding – <description> (#${ARGUMENTS})"
-     git push
-     ```
+    - Apply the provided fix using `Write` or `Edit`.
+    - Commit and push:
+      ```bash
+      git add <specific-files>
+      git commit -m "fix: resolve self-check finding – <description> (#${ARGUMENTS})"
+      git push
+      ```
 5. Re-run the three audits. Repeat steps 3–5 until no `must-fix` items remain.
 6. If `should-fix` or `note` items remain that you cannot address quickly, leave them for the human reviewer; do not block finalization on them.
 
@@ -169,14 +179,11 @@ When all subtasks are checked and the self-check is clean:
    ```bash
    gh pr edit "$PR_NUMBER" --body "..."
    ```
-3. Add the `complete` label to trigger the CI gate and automatic review:
-   ```bash
-   gh pr edit "$PR_NUMBER" --add-label complete
-   ```
-   **Leave the PR as draft.** The `review-pr` skill will promote it to ready only if the automatic audits pass cleanly.
+   **Leave the PR as draft.** The workflow will add the `complete` label; the `review-pr` skill will promote it to ready only if the automatic audits pass cleanly.
 
 ## Principles
 - Push every commit. Each push is a checkpoint.
 - Never check off a subtask if tests are failing.
 - If interrupted, re-running this skill on the same issue will resume from the first unchecked subtask.
 - Always merge the base branch before starting work to minimize conflicts.
+- **Do not run tests locally.** The target repository's CI workflows are the source of truth for test results. Push changes and let CI verify them.

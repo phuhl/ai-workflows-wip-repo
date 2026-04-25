@@ -52,3 +52,14 @@ jobs:
         run: |
           ISSUE="${{ github.event.issue.number || github.event.inputs.issue_number }}"
           opencode run --model opencode-go/kimi-k2.6 "Load the plan-and-implement skill and run it for issue #${ISSUE}"
+
+      - name: Re-add complete label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+        run: |
+          PR_NUMBER=$(gh pr list --repo "$REPO" --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ISSUE}-\")) | .number")
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label complete
+          fi
