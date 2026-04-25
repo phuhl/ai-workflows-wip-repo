@@ -238,33 +238,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
-          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
         run: |
-          # Fetch required check names from branch protection (if available)
-          BASE_BRANCH=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json baseRefName -q .baseRefName)
-          REQUIRED_NAMES=""
-          PROTECTION_JSON=$(gh api "repos/${REPO}/branches/${BASE_BRANCH}/protection/required_status_checks" 2>/dev/null || true)
-          if echo "$PROTECTION_JSON" | jq -e '.contexts' > /dev/null 2>&1; then
-            REQUIRED_NAMES=$(echo "$PROTECTION_JSON" | jq -r '((.contexts // []) + ([.checks[]?.context] // [])) | .[]' 2>/dev/null | sort -u || true)
-          else
-            echo "Could not fetch required status checks (API response: $(echo "$PROTECTION_JSON" | jq -r '.message // \"unknown\"')). Falling back to all checks."
-          fi
+          # We intentionally do NOT call the branch-protection API here because
+          # the default GITHUB_TOKEN lacks administration:read permission, so the
+          # call always returns 403. Instead we monitor every check-run except
+          # our own OpenCode workflows (to avoid dead-locking while we wait for
+          # ourselves to finish).
+          INCOMPLETE_JQ='[.check_runs[] | select(.status != "completed" and (.name | startswith("OpenCode") | not))] | length'
+          CONCLUSIONS_JQ='.check_runs[] | select(.status == "completed" and (.name | startswith("OpenCode") | not)) | .conclusion'
 
-          if [ -n "$REQUIRED_NAMES" ]; then
-            echo "Monitoring required checks only."
-            echo "REQUIRED_NAMES:"
-            echo "$REQUIRED_NAMES"
-            JQ_ARRAY=$(echo "$REQUIRED_NAMES" | jq -R . | jq -s . | tr -d '\n')
-            echo "JQ_ARRAY=$JQ_ARRAY"
-            INCOMPLETE_JQ="[.check_runs[] | select(.name as \$n | $JQ_ARRAY | index(\$n) != null) | select(.status != \"completed\")] | length"
-            CONCLUSIONS_JQ=".check_runs[] | select(.name as \$n | $JQ_ARRAY | index(\$n) != null) | select(.status == \"completed\") | .conclusion"
-          else
-            echo "No required checks found (or no permission). Monitoring all non-OpenCode checks."
-            INCOMPLETE_JQ="[.check_runs[] | select(.status != \"completed\" and (.name | startswith(\"OpenCode\") | not))] | length"
-            CONCLUSIONS_JQ=".check_runs[] | select(.status == \"completed\" and (.name | startswith(\"OpenCode\") | not)) | .conclusion"
-          fi
+          echo "INCOMPLETE_JQ: $INCOMPLETE_JQ"
+          echo "CONCLUSIONS_JQ: $CONCLUSIONS_JQ"
 
-          # Poll until required checks finish
+
+          # Poll until all relevant checks finish
           for i in {1..60}; do
             CHECK_RUNS_JSON=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs" --jq '.' 2>/dev/null || true)
             if [ -z "$CHECK_RUNS_JSON" ]; then
@@ -274,18 +261,15 @@ jobs:
             fi
 
             TOTAL_CHECKS=$(echo "$CHECK_RUNS_JSON" | jq '.check_runs | length')
-            echo "Iteration $i: total check runs = $TOTAL_CHECKS"
-
             INCOMPLETE=$(echo "$CHECK_RUNS_JSON" | jq "$INCOMPLETE_JQ") || {
               echo "Failed to parse check-runs response. Treating as failing."
               echo "status=failing" >> "$GITHUB_OUTPUT"
               exit 0
             }
-
-            echo "Iteration $i: incomplete required checks = $INCOMPLETE"
+            echo "Iteration $i: total check runs = $TOTAL_CHECKS, incomplete non-OpenCode = $INCOMPLETE"
 
             if [ "$INCOMPLETE" -gt 0 ]; then
-              echo "Waiting for ${INCOMPLETE} required check(s) to complete..."
+              echo "Waiting for ${INCOMPLETE} check(s) to complete..."
               sleep 10
             else
               break
@@ -309,7 +293,7 @@ jobs:
             exit 0
           }
 
-          echo "Filtered conclusions:"
+          echo "Relevant conclusions (excluding OpenCode):"
           echo "$CONCLUSIONS"
 
           if echo "$CONCLUSIONS" | grep -qE 'failure|cancelled|timed_out|action_required|startup_failure'; then
