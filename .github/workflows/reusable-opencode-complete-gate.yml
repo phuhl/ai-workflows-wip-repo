@@ -199,6 +199,16 @@ jobs:
         run: |
           gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "auto-review"
 
+      - name: Update progress comment — resolving conflicts
+        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          ATTEMPT=$(( ${{ steps.attempts.outputs.count }} + 1 ))
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="🤖 **OpenCode Complete Gate** — resolving merge conflicts (attempt ${ATTEMPT} of 3)..."
+
       - name: Resolve merge conflicts
         if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
         env:
@@ -232,6 +242,15 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "auto-review"
           gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "ready for review" || true
 
+      - name: Update progress comment — conflicts exhausted
+        if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted == 'true' && steps.validate.outputs.should_run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="🤖 **OpenCode Complete Gate** — merge conflicts persist after 3 resolution attempts. Manual intervention required."
+
       - name: Post exhaustion warning (conflicts)
         if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted == 'true' && steps.validate.outputs.should_run == 'true'
         env:
@@ -241,6 +260,15 @@ jobs:
         run: |
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "autofix-exhausted"
           gh pr comment "$PR_NUMBER" --repo "$REPO" --body "⚠️ Autofix exhausted after 3 attempts (conflict resolution). Manual intervention required."
+
+      - name: Update progress comment — waiting for CI
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.validate.outputs.should_run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="🤖 **OpenCode Complete Gate** — waiting for CI checks to complete..."
 
       - name: Wait for checks to finish
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.validate.outputs.should_run == 'true'
@@ -375,6 +403,16 @@ jobs:
         run: |
           gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "auto-review"
 
+      - name: Update progress comment — plan-and-implement
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'false'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+          ISSUE_NUM: ${{ steps.completeness.outputs.issue_number }}
+        run: |
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="🤖 **OpenCode Complete Gate** — CI is failing and implementation is incomplete. Running plan-and-implement for issue #${ISSUE_NUM}..."
+
       - name: Run plan-and-implement skill (CI failing, incomplete)
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'false'
         env:
@@ -383,6 +421,16 @@ jobs:
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
         run: |
           opencode run --model opencode-go/kimi-k2.6 "Load the plan-and-implement skill and run it for issue #${{ steps.completeness.outputs.issue_number }}"
+
+      - name: Update progress comment — fix-pr
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          ATTEMPT=$(( ${{ steps.attempts.outputs.count }} + 1 ))
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="🤖 **OpenCode Complete Gate** — CI is failing. Running fix-pr (attempt ${ATTEMPT} of 3)..."
 
       - name: Run fix-pr skill (CI failing, complete)
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'true'
@@ -417,6 +465,15 @@ jobs:
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "auto-review"
           gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "ready for review" || true
 
+      - name: Update progress comment — CI exhausted
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted == 'true' && steps.validate.outputs.should_run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="🤖 **OpenCode Complete Gate** — CI is failing after 3 autofix attempts. Manual intervention required."
+
       - name: Post exhaustion warning (CI failing)
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted == 'true' && steps.validate.outputs.should_run == 'true'
         env:
@@ -426,6 +483,15 @@ jobs:
         run: |
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "autofix-exhausted"
           gh pr comment "$PR_NUMBER" --repo "$REPO" --body "⚠️ Autofix exhausted after 3 attempts (CI failing). Manual intervention required."
+
+      - name: Update progress comment — review-pr
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'passing' && steps.validate.outputs.should_run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="🤖 **OpenCode Complete Gate** — CI is passing. Running review-pr..."
 
       - name: Run review-pr skill (CI passing)
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'passing' && steps.validate.outputs.should_run == 'true'
