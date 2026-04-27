@@ -25,23 +25,22 @@ Parse `$ARGUMENTS` as: `<pr-number> <context>` where context is `ci-failing` or 
    git pull
    git merge origin/<base-ref>
    ```
-3. **If the merge produces conflicts**, resolve each file thoughtfully:
-   - Open the file and look for `<<<<<<< HEAD`, `=======`, `>>>>>>> origin/...` markers.
-   - `HEAD` is your branch's code; `origin/<base-ref>` is the incoming base.
-   - When both sides contain real logic, merge them into a correct result rather than blindly picking one side.
-   - `git add <file>` after resolving each one.
-    - When all conflicts are resolved, format and commit the merge:
-      ```bash
-      git add <resolved-files>
-      npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-      git add $(git diff --cached --name-only) 2>/dev/null || true
-      git commit -m "chore: merge ${BASE} into ${BRANCH}"
-      git push
-      ```
-4. If the merge conflict resolution is complex or you are unsure, invoke the `resolve-pr-conflicts` skill:
-    ```
-    Skill("resolve-pr-conflicts", args="<pr-number>")
-    ```
+3. **If the merge succeeds** (no conflicts), proceed directly to "Check implementation completeness".
+4. **If the merge produces conflicts** (merge exits non-zero), **do not attempt to resolve them inline.** Abort the merge and delegate to the `resolve-pr-conflicts` skill, which handles conflict resolution end-to-end via rebase:
+   ```bash
+   git merge --abort
+   ```
+   Then invoke:
+   ```
+   Skill("resolve-pr-conflicts", args="<pr-number>")
+   ```
+   After `resolve-pr-conflicts` completes (it rebases onto the base branch and force-pushes), pull the updated branch so you are back on the latest conflict-free state:
+   ```bash
+   git fetch origin
+   git checkout <head-ref>
+   git pull
+   ```
+   The branch is now up-to-date with the base. Proceed to "Check implementation completeness".
 
 ## Check implementation completeness
 
