@@ -63,6 +63,7 @@ jobs:
           done
           gh label create "autofix-exhausted" --repo "$REPO" --color "b60205" --description "Autofix retries exhausted — manual intervention required" || true
           gh label create "ready for review" --repo "$REPO" --color "0e8a16" --description "Human reviewer needed" || true
+          gh label create "gate-running" --repo "$REPO" --color "6f42c1" --description "Complete-gate is currently processing this PR" || true
 
       - name: Determine PR number and head SHA
         id: meta
@@ -95,6 +96,21 @@ jobs:
           fi
           echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Prevent concurrent runs for same PR
+        if: steps.meta.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          LABELS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels -q '.labels[].name')
+          if echo "$LABELS" | grep -q "^gate-running$"; then
+            echo "Another complete-gate run is already processing PR #$PR_NUMBER. Exiting to prevent duplicate work."
+            exit 0
+          fi
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "gate-running"
 
       - name: Validate PR labels
         id: validate
@@ -536,6 +552,15 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "ready for review"
+
+      - name: Remove gate-running label
+        if: always() && steps.meta.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "gate-running" || true
 
       - name: Update progress comment with final status
         if: always() && steps.validate.outputs.should_run == 'true' && steps.progress_comment.outputs.comment_id != ''
