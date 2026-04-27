@@ -43,4 +43,15 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
         gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="${UPDATED_COMMENT_BODY}"
         ```
 
-3. Load `references/06-self-check.md` and continue in this session.
+3. **Ensure all subtasks up to "Fix issues found in audit" are checked.** The gate will retrigger this skill if any checkbox remains unchecked. Fetch the current subtasks comment and for any still-unchecked subtask among "Implement logic to pass tests" and "Update docs / README if needed":
+   - If the subtask was intentionally completed in step 2, check it normally: replace `- [ ] <text>` with `- [x] <text>`.
+   - If the subtask was **not applicable** (no docs or README changes were needed, or no further logic was required), check it with strikethrough: replace `- [ ] <text>` with `- [x] ~~<text>~~`.
+   
+   Update the subtasks comment with all changes applied:
+   ```bash
+   gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="${UPDATED_COMMENT_BODY}"
+   ```
+   
+   The final set of checked subtasks must include no remaining `- [ ]` items before "Fix issues found in audit".
+
+4. Load `references/06-self-check.md` and continue in this session.
