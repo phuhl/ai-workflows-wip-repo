@@ -18,13 +18,13 @@ jq -n \
   --arg path "$FILE_PATH" \
   --argjson line "$LINE" \
   --arg side "$SIDE" \
-  --arg subject_type "line" \
   --arg body "$BODY" \
   '{
     commit_id: $commit_id,
     path: $path,
-    line: $line,
-    side: $side,
-    subject_type: $subject_type,
+    positioning: {
+      line: $line,
+      side: $side
+    },
     body: $body
   }' | gh api "repos/{owner}/{repo}/pulls/${PR_NUMBER}/comments" --input -
