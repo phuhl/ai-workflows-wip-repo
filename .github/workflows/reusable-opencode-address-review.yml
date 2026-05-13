@@ -78,13 +78,27 @@ jobs:
         run: npm install -g opencode-ai@1.14.24
 
       - name: Run fix-pr skill
+        id: fix_pr
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: max
         run: |
-          opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ github.event.pull_request.number || github.event.inputs.pr_number }} with context review-comments"
+          opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ github.event.pull_request.number || github.event.inputs.pr_number }} with context review-comments" 2>&1 | tee /tmp/opencode-fix-pr.log
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Post error comment on failure
+        if: steps.fix_pr.outputs.exit_code != '0'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          ERROR_TAIL=$(tail -n 20 /tmp/opencode-fix-pr.log 2>/dev/null || echo "No log captured")
+          BODY=$(printf '%b' "❌ **OpenCode address-review encountered an error**\n\n\`\`\`\n${ERROR_TAIL}\n\`\`\`\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY" || true
 
       - name: Re-add auto-review label
         if: always()
