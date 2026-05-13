@@ -22,7 +22,21 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
    ```
    If merge conflicts occur, invoke `resolve-pr-conflicts` and stop.
 
-2. For each unchecked subtask up to "Fix issues found in audit":
+2. **Address pending code-line review comments before implementing** (add to your todo list):
+   - Fetch all PR code-line review comments:
+     ```bash
+     gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --jq '.[] | {id, path, line, body, in_reply_to_id, user: .user.login}'
+     ```
+   - For each thread-starter (`in_reply_to_id` is null, `user` is not `"opencode[bot]"`) that has no replies:
+     - If the suggestion is valid → implement, commit, push.
+     - If not appropriate → reply with explanation via `gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" -f body="<explanation>" -f in_reply_to=<id>`.
+   - Verify after addressing:
+     ```bash
+     bash .ai-workflows/scripts/verify-no-unresolved-comments.sh "$PR_NUMBER" "$REPO"
+     ```
+     If the script reports unresolved comments, repeat until clean, then check off this todo item.
+
+3. For each unchecked subtask up to "Fix issues found in audit":
    a. Do the work (implement logic, refactor, write docs).
     b. Format and commit:
        ```bash
@@ -43,8 +57,8 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
         gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="${UPDATED_COMMENT_BODY}"
         ```
 
-3. **Ensure all subtasks up to "Fix issues found in audit" are checked.** The gate will retrigger this skill if any checkbox remains unchecked. Fetch the current subtasks comment and for any still-unchecked subtask among "Implement logic to pass tests" and "Update docs / README if needed":
-   - If the subtask was intentionally completed in step 2, check it normally: replace `- [ ] <text>` with `- [x] <text>`.
+4. **Ensure all subtasks up to "Fix issues found in audit" are checked.** The gate will retrigger this skill if any checkbox remains unchecked. Fetch the current subtasks comment and for any still-unchecked subtask among "Implement logic to pass tests" and "Update docs / README if needed":
+   - If the subtask was intentionally completed in step 3, check it normally: replace `- [ ] <text>` with `- [x] <text>`.
    - If the subtask was **not applicable** (no docs or README changes were needed, or no further logic was required), check it with strikethrough: replace `- [ ] <text>` with `- [x] ~~<text>~~`.
    
    Update the subtasks comment with all changes applied:
@@ -54,4 +68,4 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
    
    The final set of checked subtasks must include no remaining `- [ ]` items before "Fix issues found in audit".
 
-4. Load `references/06-self-check.md` and continue in this session.
+5. Load `references/06-self-check.md` and continue in this session.
