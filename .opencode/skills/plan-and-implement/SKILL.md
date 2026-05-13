@@ -24,6 +24,14 @@ You are invoked to drive an issue labeled `opencode` to completion.
    ISSUE_BODY=$(gh issue view "$ARGUMENTS" --json body -q '.body')
    ISSUE_COMMENTS=$(gh issue view "$ARGUMENTS" --json comments -q '.comments[].body')
    ```
+3. If a PR already exists for this issue, fetch its comments and review comments too:
+   ```bash
+   PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
+   if [ -n "$PR_NUMBER" ]; then
+     PR_COMMENTS=$(gh pr view "$PR_NUMBER" --json comments -q '.comments[].body')
+     PR_REVIEW_COMMENTS=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --jq '.[] | {id, path, line, body, in_reply_to_id, user: .user.login}' 2>/dev/null || echo "")
+   fi
+   ```
 
 ## State detection
 
@@ -67,3 +75,5 @@ Load the identified reference file and follow its instructions **from top to bot
 - If interrupted, re-running this skill on the same issue will resume from the first unchecked subtask.
 - Always merge the base branch before starting work to minimize conflicts.
 - **Do not run tests locally.** The target repository's CI workflows are the source of truth for test results. Push changes and let CI verify them.
+- **Read all comments on the issue and on the PR before implementing anything.** Previous review feedback, discussions, and issue comments may contain critical context. Re-reading them prevents repeating the same mistakes that were already pointed out.
+- **When writing code that could be misunderstood** — non-obvious patterns, intentional workarounds, deliberate deviations from convention — post a brief PR comment explaining *why* the code is written that way. This prevents the reviewer from flagging it as an error.
