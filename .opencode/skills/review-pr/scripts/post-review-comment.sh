@@ -22,9 +22,8 @@ jq -n \
   '{
     commit_id: $commit_id,
     path: $path,
-    positioning: {
-      line: $line,
-      side: $side
-    },
-    body: $body
+    body: $body,
+    line: $line,
+    side: $side,
+    subject_type: "line"
   }' | gh api "repos/{owner}/{repo}/pulls/${PR_NUMBER}/comments" --input -
