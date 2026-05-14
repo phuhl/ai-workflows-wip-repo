@@ -37,7 +37,7 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
      If the script reports unresolved comments, repeat until clean, then check off this todo item.
 
 3. For each unchecked subtask up to "Fix issues found in audit":
-   a. Do the work (implement logic, refactor, write docs).
+    a. Do the work (implement logic, refactor, write docs).
     b. Format and commit:
        ```bash
        git add <specific-files>
@@ -46,7 +46,11 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
        git commit -m "feat: <description> (#${ARGUMENTS})"
        git push
        ```
-   c. Check off the subtask in the subtasks comment:
+    c. Post a PR comment describing what was done in this commit:
+       ```bash
+       gh pr comment "$PR_NUMBER" --body "$(printf '%b' "**<subtask>**: <description of what changed and why>\n\nCommit: $(git rev-parse --short HEAD)")"
+       ```
+    d. Check off the subtask in the subtasks comment:
       - Find the subtasks comment:
         ```bash
         gh issue view "$ARGUMENTS" --json comments -q '.comments[] | select(.body | contains("## Subtasks")) | {id,body}'
