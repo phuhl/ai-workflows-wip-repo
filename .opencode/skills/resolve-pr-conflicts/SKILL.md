@@ -46,9 +46,20 @@ Repeat until the rebase completes. If the result looks wrong at any point (logic
 git rebase --abort
 ```
 
-## Step 3 — Push the rebased branch
+## Step 3 — Format and push the rebased branch
 
-After the rebase completes successfully, push the rewritten history. If any regressions are discovered later by CI, they will be handled by the complete-gate workflow.
+After the rebase completes successfully, run prettier on all changed files to avoid a CI formatting failure on the next run:
+
+```bash
+CHANGED_FILES=$(git diff --name-only "origin/$BASE" 2>/dev/null || true)
+if [ -n "$CHANGED_FILES" ]; then
+  echo "$CHANGED_FILES" | xargs npx prettier --write 2>/dev/null || true
+  git add -u
+  git commit -m "style: format after conflict resolution" || true
+fi
+```
+
+Then force-push the rewritten history. If any regressions are discovered later by CI, they will be handled by the complete-gate workflow.
 
 ```bash
 git push --force-with-lease
