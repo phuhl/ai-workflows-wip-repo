@@ -94,8 +94,10 @@ jobs:
           if [ -z "$HEAD_SHA" ]; then
             HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid -q .headRefOid)
           fi
+          BASE_BRANCH=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json baseRefName -q .baseRefName 2>/dev/null || echo "")
           echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+          echo "base_branch=${BASE_BRANCH}" >> "$GITHUB_OUTPUT"
 
       - name: Prevent concurrent runs for same PR
         if: steps.meta.outputs.pr_number != ''
@@ -359,8 +361,52 @@ jobs:
             echo "Detected failing/cancelled/timed_out/action_required/startup_failure conclusion."
             echo "status=failing" >> "$GITHUB_OUTPUT"
           else
-            echo "No failing conclusions detected."
-            echo "status=passing" >> "$GITHUB_OUTPUT"
+            echo "No failing conclusions detected among reported checks. Validating required checks..."
+
+            # Verify required status checks from branch protection.
+            # The app token may have administration permissions that GITHUB_TOKEN lacks.
+            BASE_BRANCH="${{ steps.meta.outputs.base_branch }}"
+            echo ""
+            echo "--- Required status checks ---"
+            REQUIRED_RAW=$(gh api "repos/${REPO}/branches/${BASE_BRANCH}/protection/required_status_checks" --jq '.contexts[]' 2>/dev/null || echo "")
+
+            if [ -z "$REQUIRED_RAW" ]; then
+              echo "Could not fetch required status checks (branch protection API empty or 403)."
+              echo "Falling back to check-run-based result — CI may miss checks not yet reported."
+              echo "status=passing" >> "$GITHUB_OUTPUT"
+            else
+              echo "Required contexts:"
+              echo "$REQUIRED_RAW"
+              echo ""
+
+              ALL_GOOD=true
+              while IFS= read -r ctx; do
+                [ -z "$ctx" ] && continue
+                MATCH=$(echo "$CHECK_RUNS_JSON" | jq -r --arg ctx "$ctx" '[.check_runs[] | select(.name == $ctx)]')
+                COUNT=$(echo "$MATCH" | jq 'length')
+                if [ "$COUNT" -eq 0 ]; then
+                  echo "MISSING required check: ${ctx} (not yet reported)"
+                  ALL_GOOD=false
+                else
+                  CONCLUSION=$(echo "$MATCH" | jq -r '.[0].conclusion')
+                  echo "  ${ctx}: ${CONCLUSION}"
+                  if [ "$CONCLUSION" != "success" ] && [ "$CONCLUSION" != "neutral" ] && [ "$CONCLUSION" != "skipped" ]; then
+                    echo "  ^^ REQUIRED CHECK NOT PASSING"
+                    ALL_GOOD=false
+                  fi
+                fi
+              done <<< "$REQUIRED_RAW"
+
+              if [ "$ALL_GOOD" = true ]; then
+                echo ""
+                echo "All required status checks are passing."
+                echo "status=passing" >> "$GITHUB_OUTPUT"
+              else
+                echo ""
+                echo "One or more required checks are missing or failing."
+                echo "status=failing" >> "$GITHUB_OUTPUT"
+              fi
+            fi
           fi
 
       - name: Check implementation completeness
