@@ -54,6 +54,7 @@ Stage only the files you changed (avoid accidentally staging secrets):
 ```bash
 git add <specific-files>
 npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
+npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
 git add $(git diff --cached --name-only) 2>/dev/null || true
 git commit -m "fix: resolve CI failure – <what broke>"
 git push

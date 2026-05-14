@@ -41,9 +41,10 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
     b. Format and commit:
        ```bash
        git add <specific-files>
-       npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-       git add $(git diff --cached --name-only) 2>/dev/null || true
-       git commit -m "feat: <description> (#${ARGUMENTS})"
+        npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
+        npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
+        git add $(git diff --cached --name-only) 2>/dev/null || true
+        git commit -m "feat: <description> (#${ARGUMENTS})"
        git push
        ```
     c. Post a PR comment describing what was done in this commit:

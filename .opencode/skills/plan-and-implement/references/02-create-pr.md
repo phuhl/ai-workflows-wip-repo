@@ -65,9 +65,10 @@ Create a branch, push it, open a draft PR, check off "Open draft PR", and immedi
 7. Format and commit:
    ```bash
    git add <specific-files>
-   npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-   git add $(git diff --cached --name-only) 2>/dev/null || true
-   git commit -m "feat: add stubs and failing tests (#${ARGUMENTS})"
+    npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
+    npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
+    git add $(git diff --cached --name-only) 2>/dev/null || true
+    git commit -m "feat: add stubs and failing tests (#${ARGUMENTS})"
    git push
    ```
 

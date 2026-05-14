@@ -87,9 +87,10 @@ If context is `ci-failing`:
 3. Format and commit:
    ```bash
    git add <specific-files>
-   npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-   git add $(git diff --cached --name-only) 2>/dev/null || true
-   git commit -m "fix: resolve CI failure – <description> (#<issue_number>)"
+    npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
+    npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
+    git add $(git diff --cached --name-only) 2>/dev/null || true
+    git commit -m "fix: resolve CI failure – <description> (#<issue_number>)"
    git push
    ```
 4. If the `fix-pr-ci` skill is available, you may invoke it for deeper diagnostics:
@@ -109,6 +110,7 @@ If context is `review-comments`:
       ```bash
       git add <specific-files>
       npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
+      npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
       git add $(git diff --cached --name-only) 2>/dev/null || true
       git commit -m "fix: address review comment – <description>"
       ```

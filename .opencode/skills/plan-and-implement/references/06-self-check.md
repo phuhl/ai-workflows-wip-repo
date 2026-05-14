@@ -25,6 +25,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
      ```bash
      git add <specific-files>
      npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
+     npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
      git add $(git diff --cached --name-only) 2>/dev/null || true
      git commit -m "fix: address review comment — <description> (#${ARGUMENTS})"
      git push
@@ -78,6 +79,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
       ```bash
       git add <specific-files>
       npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
+      npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
       git add $(git diff --cached --name-only) 2>/dev/null || true
       git commit -m "fix: resolve self-check finding – <description> (#${ARGUMENTS})"
       git push

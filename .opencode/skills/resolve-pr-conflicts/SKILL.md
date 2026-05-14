@@ -54,6 +54,7 @@ After the rebase completes successfully, run prettier on all changed files to av
 CHANGED_FILES=$(git diff --name-only "origin/$BASE" 2>/dev/null || true)
 if [ -n "$CHANGED_FILES" ]; then
   echo "$CHANGED_FILES" | xargs npx prettier --write 2>/dev/null || true
+  echo "$CHANGED_FILES" | xargs npx eslint --fix 2>/dev/null || true
   git add -u
   git commit -m "style: format after conflict resolution" || true
 fi
