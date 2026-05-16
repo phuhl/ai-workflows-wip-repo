@@ -37,15 +37,19 @@ Only `phuhl` can label an issue to start the workflow.
 
 **What happens:**
 
-1. The AI fetches the issue. If there are no subtasks, it breaks the work into small steps and posts them as a **comment** on the issue. The original issue body is never modified.
-2. It creates a branch and a **draft PR**.
-3. Before writing any code, it merges the latest base branch into the feature branch to prevent future conflicts.
-4. It writes stubs and failing tests, commits, pushes, and **stops** — all in the same session as PR creation. The workflow adds the `auto-review` label so the CI gate can monitor the build.
+1. The AI fetches the issue. It reads the issue body and **all comments** on both the issue and any existing PR. This prevents repeating mistakes that were already pointed out.
+2. If there are no subtasks, it breaks the work into small steps and posts them as a **comment** on the issue. The original issue body is never modified.
+3. **Stacking:** If any comment on the issue says to stack on or base on another PR (e.g. "stack on #42"), the AI uses that PR's branch as the base instead of `master`.
+4. It creates a branch and a **draft PR** using the determined base branch.
+5. Before writing any code, it merges the latest base branch into the feature branch to prevent future conflicts.
+6. It writes stubs and failing tests. Before committing, it runs both `npx prettier --write` and `npx eslint --fix` to catch formatting and lint issues locally.
+7. It commits, pushes, and **stops** — all in the same session as PR creation. The workflow adds the `auto-review` label so the CI gate can monitor the build.
 5. When the `auto-review` label is added to the PR, the gate triggers and first checks whether the implementation is finished by looking for unchecked subtasks in the issue comments.
 6. If any subtasks are still open, the gate **removes the `auto-review` label** and hands off back to the AI to resume implementation — regardless of whether CI passed or failed.
-7. It implements the remaining subtasks, commits and pushes after each one.
-8. Before finishing, it runs a self-check by auditing its own code with the same checks used in code review. It looks for test coverage gaps, correctness issues, and guideline violations. Any `must-fix` finding is fixed, committed, and re-checked before proceeding.
-9. After all subtasks and self-checks are done, it merges the base one final time, updates the PR body, and stops. The workflow **re-adds the `auto-review` label**. The PR remains a draft — the automatic review gate will promote it if the audits pass cleanly.
+7. Before implementing each subtask, the AI checks for **pending code-line review comments** on the PR and addresses any that are unresolved (implements suggestions or replies with explanations). It tracks this as a todo item.
+8. It implements the remaining subtasks, commits and pushes after each one. Each implementation commit is accompanied by a PR comment describing what was done. Every commit runs both `prettier` and `eslint --fix` before pushing.
+9. Before finishing, it runs a self-check by auditing its own code with the same checks used in code review. It looks for test coverage gaps, correctness issues, and guideline violations. Any `must-fix` finding is fixed, committed, and re-checked before proceeding.
+10. After all subtasks and self-checks are done, it merges the base one final time, posts a **5-bullet implementation summary** (each bullet ≤ 200 chars) as a PR comment, and stops. The PR body with its "Closes #X" line is preserved for issue linking. The workflow **re-adds the `auto-review` label**. The PR remains a draft — the automatic review gate will promote it if the audits pass cleanly.
 
 **What you see:**
 
@@ -53,6 +57,31 @@ Only `phuhl` can label an issue to start the workflow.
 - A draft PR is opened with "Work in progress" in the body.
 - A bot comment on the issue gets a `## Subtasks` section with checkboxes.
 - As the AI works, checkboxes are checked off in the comment and commits appear.
+
+---
+
+### Step 1.5: Get a plan before implementing
+
+**Workflow:** `reusable-opencode-plan.yml`
+
+**What to do:**
+
+1. Open the issue in GitHub.
+2. Leave a comment with `/oc plan`.
+
+**What happens:**
+
+1. The AI reads the issue body and all comments.
+2. It explores the codebase to understand the project structure, relevant modules, and existing patterns.
+3. It posts a comment with a structured plan:
+   - **Plan:** A concise 3–5 sentence summary of the approach, referencing specific files and functions.
+   - **Risk analysis:** Each risk with likelihood, impact, and mitigation.
+   - **Options considered:** Tradeoffs between different implementation strategies (if applicable).
+
+**When to use this:**
+
+- Before labeling an issue with `opencode`, when you want a human review of the plan first.
+- When the issue is underspecified — the plan comment will flag missing details.
 
 ---
 
@@ -65,9 +94,9 @@ Nothing. This happens automatically when the `auto-review` label is added to a P
 
 **What happens:**
 
-1. The workflow first checks if the PR has merge conflicts. If so, it resolves them.
-2. It waits for CI checks to finish.
-3. If CI is failing, it removes the `auto-review` label, fixes the failures, and re-adds the `auto-review` label.
+1. The workflow first checks if the PR has merge conflicts. If so, it resolves them (including running `prettier` and `eslint --fix` after conflict resolution).
+2. It waits for CI checks to finish. After all reported checks complete, it queries the **branch protection API** to verify that every **required status check** has reported and passed. This prevents the gate from mislabeling a PR as "CI passing" when a required check hasn't even started.
+3. If CI is failing (any check failed, or a required check is missing/failing), it removes the `auto-review` label, fixes the failures, and re-adds the `auto-review` label.
 4. If CI is passing, it runs the review workflow inline.
 5. When the gate reaches a terminal state — whether CI passed, or autofix attempts are exhausted — it removes `auto-review` and adds `ready for review`.
 6. The AI fetches the PR metadata and determines the diff range.
@@ -100,7 +129,7 @@ Nothing. This happens automatically when the workflow detects problems.
 **Workflow triggers:**
 
 - **`reusable-opencode-complete-gate.yml`** — when the `auto-review` label is added to a PR.
-- **`reusable-opencode-address-review.yml`** — when `phuhl` submits a review with `changes_requested` or `commented`.
+- **`reusable-opencode-address-review.yml`** — when `phuhl` submits a review with `changes_requested` or `commented`, or when `phuhl` comments `/oc address-review` on a PR.
 - **`reusable-opencode-fix-pr.yml`** — when `phuhl` comments `/oc fix-pr` on a PR.
 
 **What happens when CI is failing:**
@@ -111,20 +140,20 @@ When the auto-review gate detects failing CI checks:
 3. It checks whether the implementation is complete by looking at unchecked subtasks in the issue comments.
 4. If implementation is not finished (unchecked subtasks exist), it hands off to `plan-and-implement` to resume work instead of trying to patch half-finished stubs.
 5. If implementation is finished, it reads the failed CI logs (`gh run view --log-failed`) to understand the exact error, then fixes the root cause.
-6. It commits and pushes the fix.
+6. It runs `npx prettier --write` and `npx eslint --fix` on changed files, then commits and pushes the fix.
 7. The `auto-review` label is re-added (and `ready for review` is removed), which triggers another check run and the cycle repeats.
 
 > **Autofix limits:** After 3 failed fix attempts, the workflow stops trying and posts an exhaustion warning on the PR. Manual intervention is required at that point.
 
 **What happens when review comments are unresolved:**
-When `phuhl` submits a review on the PR:
+When `phuhl` submits a review on the PR (or comments `/oc address-review`):
 
 1. The `auto-review` and `ready for review` labels are removed.
 2. The AI checks out the branch and merges the latest base.
-3. It fetches all unresolved comments via `gh pr view`.
-4. For each comment requiring a code change: it makes the change, commits, and pushes.
-5. For each comment that is a question: it replies on the PR.
-6. For each outdated comment: it ignores it.
+3. It fetches all unresolved code-line review comments via the GitHub API.
+4. For each comment requiring a code change: it makes the change, runs `prettier` and `eslint --fix`, commits, and pushes.
+5. For each comment that is a question or where the current code is intentional: it replies with an explanation directly on the comment thread.
+6. After all comments are addressed, it runs a verification script to confirm no unresolved code-line comments remain.
 7. It posts a summary comment listing all changes made.
 8. The `auto-review` label is re-added (and `ready for review` is removed), triggering the review again.
 
@@ -169,6 +198,18 @@ This triggers the same audit process described in Step 2:
 ## General Capabilities
 
 These skills can be triggered by asking the AI directly.
+
+### Commands available via PR comments
+
+These commands can be typed as a comment on a pull request (only `phuhl` can trigger them):
+
+| Command | What it does |
+|---|---|
+| `/oc code-review` | Runs automated code review and posts findings as inline comments |
+| `/oc fix-pr` | Fixes failing CI checks on the PR |
+| `/oc address-review` | Addresses all unresolved code-line review comments |
+| `/oc plan` | Reads an issue and posts a structured plan with risk analysis |
+| `/oc complete-gate` | Manually triggers the complete-gate evaluation |
 
 ### Review code changes
 
@@ -237,5 +278,6 @@ Tell the AI the PR has conflicts.
    - It opens each conflicted file.
    - It merges the real logic from both sides into a correct result instead of blindly picking one side.
    - It stages the resolved files and continues the rebase.
-4. It force-pushes safely (`--force-with-lease`) and confirms the PR is now mergeable.
-5. It watches CI re-run automatically.
+4. After the rebase completes, it runs `prettier` and `eslint --fix` on all changed files to prevent formatting-related CI failures.
+5. It force-pushes safely (`--force-with-lease`) and confirms the PR is now mergeable.
+6. It watches CI re-run automatically.

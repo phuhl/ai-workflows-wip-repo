@@ -12,22 +12,27 @@ This repository centralizes all repository-generic AI automation so individual r
 apparts-js/ai-workflows/
 ├── .github/workflows/          # Reusable workflows consumed by target repos
 │   ├── reusable-opencode-master.yml   # master router — calls the ones below
-│   ├── reusable-opencode.yml
+│   ├── reusable-opencode.yml          # /oc command dispatcher (generic commands)
 │   ├── reusable-opencode-address-review.yml
 │   ├── reusable-opencode-code-review.yml
 │   ├── reusable-opencode-complete-gate.yml
-│   └── reusable-opencode-plan-and-implement.yml
+│   ├── reusable-opencode-fix-pr.yml
+│   ├── reusable-opencode-plan-and-implement.yml
+│   └── reusable-opencode-plan.yml     # /oc plan — reads issue & code, posts plan
 ├── .opencode/skills/           # Generic OpenCode skills
 │   ├── code-guidelines-check/
 │   ├── code-review/            # generic template
 │   ├── fix-pr-ci/
 │   ├── fix-pr/
+│   ├── plan/                   # /oc plan — analysis & options (no implementation)
 │   ├── plan-and-implement/
 │   ├── resolve-pr-conflicts/
 │   ├── review-pr/
 │   └── verify-tests/           # generic template
 ├── scripts/
-│   └── bootstrap-skills.sh     # Merges shared + local skills at CI time
+│   ├── bootstrap-skills.sh              # Merges shared + local skills at CI time
+│   ├── verify-bullet-length.sh          # Checks summary bullets ≤ 200 chars
+│   └── verify-no-unresolved-comments.sh # Verifies all code-line review comments addressed
 ├── wrappers/
 │   ├── master/                 # Single wrapper that handles all triggers
 │   │   └── opencode-master.yml
@@ -36,7 +41,9 @@ apparts-js/ai-workflows/
 │       ├── opencode-address-review.yml
 │       ├── opencode-code-review.yml
 │       ├── opencode-complete-gate.yml
-│       └── opencode-plan-and-implement.yml
+│       ├── opencode-fix-pr.yml
+│       ├── opencode-plan-and-implement.yml
+│       └── opencode-plan.yml
 ├── .opencode.json              # Example OpenCode config — tells the CLI where skills live
 ├── README.md
 └── USER_GUIDE.md              # Tutorial on how to use the automation
@@ -67,7 +74,9 @@ cp wrappers/individual/opencode.yml                 <target-repo>/.github/workfl
 cp wrappers/individual/opencode-code-review.yml     <target-repo>/.github/workflows/
 cp wrappers/individual/opencode-address-review.yml  <target-repo>/.github/workflows/
 cp wrappers/individual/opencode-complete-gate.yml   <target-repo>/.github/workflows/
+cp wrappers/individual/opencode-fix-pr.yml          <target-repo>/.github/workflows/
 cp wrappers/individual/opencode-plan-and-implement.yml <target-repo>/.github/workflows/
+cp wrappers/individual/opencode-plan.yml            <target-repo>/.github/workflows/
 ```
 
 Each wrapper declares only the permissions that specific workflow needs.
@@ -118,3 +127,6 @@ This means a target repo can override individual skills or add repo-specific ref
 - All workflows hardcode `phuhl` as the triggering actor/reviewer for now.
 - No version pinning — target repos always pull `@master` (or the default branch).
 - `.claude/skills/` is out of scope.
+- The `complete-gate` workflow queries the branch protection API via the GitHub App token to verify required status checks, not just any reported check. This prevents false-positive "CI passing" labels when a required check hasn't reported yet.
+- PR stacking is supported: if an issue comment says "stack on #42" or "base on #42", the `plan-and-implement` skill will use that PR's branch as the base instead of `master`.
+- After every code commit, `npx eslint --fix` runs alongside `npx prettier --write` to catch lint errors locally, avoiding wasted CI cycles on formatting/lint failures.
