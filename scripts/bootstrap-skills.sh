@@ -39,23 +39,28 @@ mkdir -p "$OUT_DIR"
 rm -rf "$OUT_DIR"/*
 cp -r "$TMP_DIR"/* "$OUT_DIR/"
 
-# 4. Bootstrap plugins
+# 4. Bootstrap plugins (via staging dir to avoid cp-on-self when local=out)
 # Shared plugins live at $SHARED_DIR/../plugins (e.g. .ai-workflows/.opencode/plugins/)
 # Local plugins live at $LOCAL_DIR/../plugins (e.g. .opencode/plugins/)
-OUT_PLUGINS_DIR="$OUT_DIR/../plugins"
 SHARED_PLUGINS_DIR="${SHARED_DIR%/skills}/plugins"
 LOCAL_PLUGINS_DIR="${LOCAL_DIR%/skills}/plugins"
+OUT_PLUGINS_DIR="$OUT_DIR/../plugins"
 
 if [ -d "$SHARED_PLUGINS_DIR" ] || [ -d "$LOCAL_PLUGINS_DIR" ]; then
-  mkdir -p "$OUT_PLUGINS_DIR"
+  STAGING="$TMP_DIR/plugins-stage"
+  mkdir -p "$STAGING"
 
   if [ -d "$SHARED_PLUGINS_DIR" ]; then
-    cp -r "$SHARED_PLUGINS_DIR"/* "$OUT_PLUGINS_DIR/"
+    cp -r "$SHARED_PLUGINS_DIR"/* "$STAGING/"
   fi
 
   if [ -d "$LOCAL_PLUGINS_DIR" ]; then
-    cp -r "$LOCAL_PLUGINS_DIR"/* "$OUT_PLUGINS_DIR/"
+    cp -r "$LOCAL_PLUGINS_DIR"/* "$STAGING/"
   fi
+
+  mkdir -p "$OUT_PLUGINS_DIR"
+  rm -rf "$OUT_PLUGINS_DIR"/*
+  cp -r "$STAGING"/* "$OUT_PLUGINS_DIR/"
 fi
 
 echo "Skills bootstrapped to $OUT_DIR"
