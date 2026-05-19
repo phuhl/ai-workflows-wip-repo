@@ -75,57 +75,12 @@ Before attempting any fix, determine whether the implementation is actually fini
 
 ## Fix CI failures
 
-If context is `ci-failing`:
-1. **Read the failed CI logs first.** Do not touch code until you understand what failed:
-   ```bash
-   BRANCH=$(gh pr view <pr-number> --json headRefName -q '.headRefName')
-   RUN_ID=$(gh run list --branch "$BRANCH" --status failure --limit 1 --json databaseId -q '.[0].databaseId')
-   gh run view "$RUN_ID" --log-failed
-   ```
-   Read the errors carefully. Understand *what* failed and *why* before making any changes.
-2. Fix the root cause.
-3. Format and commit:
-   ```bash
-   git add <specific-files>
-    npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-    npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
-    git add $(git diff --cached --name-only) 2>/dev/null || true
-    git commit -m "fix: resolve CI failure – <description> (#<issue_number>)"
-   git push
-   ```
-4. If the `fix-pr-ci` skill is available, you may invoke it for deeper diagnostics:
-   ```
-   Skill("fix-pr-ci", args="<pr-number>")
-   ```
+If context is `ci-failing`: Load `references/ci-failing.md` and follow its instructions from top to bottom.
 
 ## Address review comments
 
-If context is `review-comments`:
-1. Fetch comments and reviews:
-   ```bash
-   gh pr view <pr-number> --json comments,reviews
-   ```
-2. For each unresolved comment:
-    - **Code change**: make change, then format and commit:
-      ```bash
-      git add <specific-files>
-      npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-      npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
-      git add $(git diff --cached --name-only) 2>/dev/null || true
-      git commit -m "fix: address review comment – <description>"
-      ```
-    - **Question**: reply via `gh pr comment <pr-number> --body "..."`.
-    - **Outdated**: ignore.
-3. Push:
-   ```bash
-   git push
-   ```
-4. Post summary:
-   ```bash
-   gh pr comment <pr-number> --body "All review comments addressed. Changes made:
-- <bullet list>"
-   ```
+If context is `review-comments`: Load `references/review-comments.md` and follow its instructions from top to bottom.
 
 ## After fixing
 
-Push your changes. The auto-review gate workflow will monitor CI and re-invoke you if further fixes are needed. **Do not run tests locally.**
+Push your changes after each fix (the reference files handle this per-item). The auto-review gate workflow will monitor CI and re-invoke you if further fixes are needed. **Do not run tests locally.**
