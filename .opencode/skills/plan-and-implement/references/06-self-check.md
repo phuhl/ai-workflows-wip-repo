@@ -64,12 +64,15 @@ Before running audits, ensure every code-line review comment on this PR is handl
    RANGE="${BASE}..HEAD"
    ```
 
-3. Run the three audit skills and capture their outputs:
+3. Run the four audit skills **in parallel agents** and capture their outputs:
+   Launch all four at the same time using the Task tool:
    ```
-   Skill("code-review", args=RANGE)
-   Skill("verify-tests", args=RANGE)
-   Skill("code-guidelines-check", args=RANGE)
+   Task("code-review", args=RANGE, subagent_type="general")
+   Task("verify-tests", args=RANGE, subagent_type="general")
+   Task("code-guidelines-check", args=RANGE, subagent_type="general")
+   Task("deduplication-check", args=RANGE, subagent_type="general")
    ```
+   Save each agent's output to a temp file immediately as they return. Do not run them sequentially — they are independent and should execute in parallel.
 
 4. Parse the **Actionable findings** sections for `**severity:** must-fix`.
 
@@ -85,7 +88,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
       git push
       ```
 
-6. Re-run the three audits. Repeat steps 4–6 until no `must-fix` items remain.
+6. Re-run the four audits. Repeat steps 4–6 until no `must-fix` items remain.
 
 7. If `should-fix` or `note` items remain that you cannot address quickly, leave them for the human reviewer; do not block finalization on them.
 
