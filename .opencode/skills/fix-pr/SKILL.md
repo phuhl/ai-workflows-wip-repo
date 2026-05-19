@@ -81,6 +81,20 @@ If context is `ci-failing`: Load `references/ci-failing.md` and follow its instr
 
 If context is `review-comments`: Load `references/review-comments.md` and follow its instructions from top to bottom.
 
+## Post-write hook
+
+After every file write or edit, the `file-hook` plugin runs automatically:
+- `npx prettier --write <file>` — formats the file
+- `npx eslint <file>` — lints the file
+- `npx tsc --noEmit` — type-checks the entire project
+
+The hook does **not** block the write — it only logs issues found. When the plugin is unavailable, manually run these checks before committing:
+```bash
+npx prettier --write <file>
+npx eslint <file>
+npx tsc --noEmit
+```
+
 ## After fixing
 
 Push your changes after each fix (the reference files handle this per-item). The auto-review gate workflow will monitor CI and re-invoke you if further fixes are needed. **Do not run tests locally.**

@@ -79,6 +79,20 @@ Load the identified reference file and follow its instructions **from top to bot
 - Some reference files end with "Load `references/XX-...md`" — load that file next and continue in the same session.
 - Do not continue beyond what the reference file instructs.
 
+## Post-write hook
+
+After every file write or edit, the `file-hook` plugin runs automatically:
+- `npx prettier --write <file>` — formats the file
+- `npx eslint <file>` — lints the file
+- `npx tsc --noEmit` — type-checks the entire project
+
+The hook does **not** block the write — it only logs issues found. When the plugin is unavailable, manually run these checks before committing:
+```bash
+npx prettier --write <file>
+npx eslint <file>
+npx tsc --noEmit
+```
+
 ## Principles
 - Push every commit. Each push is a checkpoint.
 - Never check off a subtask if tests are failing.

@@ -39,4 +39,23 @@ mkdir -p "$OUT_DIR"
 rm -rf "$OUT_DIR"/*
 cp -r "$TMP_DIR"/* "$OUT_DIR/"
 
+# 4. Bootstrap plugins
+# Shared plugins live at $SHARED_DIR/../plugins (e.g. .ai-workflows/.opencode/plugins/)
+# Local plugins live at $LOCAL_DIR/../plugins (e.g. .opencode/plugins/)
+OUT_PLUGINS_DIR="$OUT_DIR/../plugins"
+SHARED_PLUGINS_DIR="${SHARED_DIR%/skills}/plugins"
+LOCAL_PLUGINS_DIR="${LOCAL_DIR%/skills}/plugins"
+
+if [ -d "$SHARED_PLUGINS_DIR" ] || [ -d "$LOCAL_PLUGINS_DIR" ]; then
+  mkdir -p "$OUT_PLUGINS_DIR"
+
+  if [ -d "$SHARED_PLUGINS_DIR" ]; then
+    cp -r "$SHARED_PLUGINS_DIR"/* "$OUT_PLUGINS_DIR/"
+  fi
+
+  if [ -d "$LOCAL_PLUGINS_DIR" ]; then
+    cp -r "$LOCAL_PLUGINS_DIR"/* "$OUT_PLUGINS_DIR/"
+  fi
+fi
+
 echo "Skills bootstrapped to $OUT_DIR"

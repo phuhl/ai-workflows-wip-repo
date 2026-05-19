@@ -84,3 +84,12 @@ gh pr edit <pr-number> --add-reviewer phuhl
 ```
 
 **Note:** The calling workflow handles adding a reaction to the triggering comment.
+
+## Post-write hook
+
+After every file write or edit, the `file-hook` plugin runs automatically:
+- `npx prettier --write <file>` — formats the file
+- `npx eslint <file>` — lints the file
+- `npx tsc --noEmit` — type-checks the entire project
+
+The hook does **not** block the write — it only logs issues found.

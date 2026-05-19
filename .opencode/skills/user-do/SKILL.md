@@ -47,6 +47,20 @@ PROMPT=$(cat /tmp/opencode-do-prompt.txt 2>/dev/null || echo "$ARGUMENTS")
    ```
 5. **After finishing**, post a brief comment summarizing what was done.
 
+## Post-write hook
+
+After every file write or edit, the `file-hook` plugin runs automatically:
+- `npx prettier --write <file>` — formats the file
+- `npx eslint <file>` — lints the file
+- `npx tsc --noEmit` — type-checks the entire project
+
+The hook does **not** block the write — it only logs issues found. When the plugin is unavailable, manually run these checks before committing:
+```bash
+npx prettier --write <file>
+npx eslint <file>
+npx tsc --noEmit
+```
+
 ## Principles
 - Do exactly what the user asked — no more, no less.
 - If the prompt is ambiguous, do your best interpretation and explain what you did.

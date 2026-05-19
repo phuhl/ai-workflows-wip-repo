@@ -73,3 +73,17 @@ gh pr ready <pr-number>
 ```
 
 Report back: which checks were failing, what was fixed, and whether CI is now green.
+
+## Post-write hook
+
+After every file write or edit, the `file-hook` plugin runs automatically:
+- `npx prettier --write <file>` — formats the file
+- `npx eslint <file>` — lints the file
+- `npx tsc --noEmit` — type-checks the entire project
+
+The hook does **not** block the write — it only logs issues found. When the plugin is unavailable, manually run these checks before committing:
+```bash
+npx prettier --write <file>
+npx eslint <file>
+npx tsc --noEmit
+```
