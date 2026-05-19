@@ -368,15 +368,18 @@ jobs:
             BASE_BRANCH="${{ steps.meta.outputs.base_branch }}"
             echo ""
             echo "--- Required status checks ---"
-            REQUIRED_RAW=$(gh api "repos/${REPO}/branches/${BASE_BRANCH}/protection/required_status_checks" --jq '.contexts[]' 2>/dev/null || echo "")
+            REQUIRED_JSON=$(gh api "repos/${REPO}/branches/${BASE_BRANCH}/protection/required_status_checks" 2>/dev/null || echo "{}")
 
-            if [ -z "$REQUIRED_RAW" ]; then
-              echo "Could not fetch required status checks (branch protection API empty or 403)."
+            # Check for API error response (403, 404, etc.)
+            if echo "$REQUIRED_JSON" | jq -e '.message' >/dev/null 2>&1; then
+              ERROR_MSG=$(echo "$REQUIRED_JSON" | jq -r '.message')
+              echo "Branch protection API returned: ${ERROR_MSG}"
+              echo "The app token likely needs administration:read permission on ${REPO}."
               echo "Falling back to check-run-based result — CI may miss checks not yet reported."
               echo "status=passing" >> "$GITHUB_OUTPUT"
-            else
+            elif echo "$REQUIRED_JSON" | jq -e '.contexts' >/dev/null 2>&1; then
               echo "Required contexts:"
-              echo "$REQUIRED_RAW"
+              echo "$REQUIRED_JSON" | jq -r '.contexts[]'
               echo ""
 
               ALL_GOOD=true
@@ -395,7 +398,7 @@ jobs:
                     ALL_GOOD=false
                   fi
                 fi
-              done <<< "$REQUIRED_RAW"
+              done < <(echo "$REQUIRED_JSON" | jq -r '.contexts[]')
 
               if [ "$ALL_GOOD" = true ]; then
                 echo ""
@@ -406,6 +409,10 @@ jobs:
                 echo "One or more required checks are missing or failing."
                 echo "status=failing" >> "$GITHUB_OUTPUT"
               fi
+            else
+              echo "Branch protection API returned an unexpected response or no contexts configured."
+              echo "Falling back to check-run-based result."
+              echo "status=passing" >> "$GITHUB_OUTPUT"
             fi
           fi
 
