@@ -1,5 +1,5 @@
 ---
-name: do
+name: user-do
 description: Execute an arbitrary user prompt on an issue or PR. Triggered by '/oc do <prompt>'.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
 context: fork
