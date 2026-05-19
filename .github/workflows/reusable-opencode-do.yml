@@ -53,10 +53,24 @@ jobs:
           git config user.name "opencode[bot]"
           git config user.email "opencode[bot]@users.noreply.github.com"
 
+      - name: Create progress comment
+        id: progress_comment
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${NUMBER}/comments" \
+            --jq '.id' \
+            -f body=$'🤖 **OpenCode is running your prompt...**\n\nThe `/oc do` command has started. This comment will be updated when the run completes.' || echo "")
+          echo "comment_id=${COMMENT_ID}" >> "$GITHUB_OUTPUT"
+
       - name: Install OpenCode
         run: npm install -g opencode-ai@1.14.24
 
       - name: Run user prompt
+        id: do_run
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -66,4 +80,35 @@ jobs:
           COMMENT="${{ github.event.comment.body }}"
           PROMPT=$(echo "$COMMENT" | sed -E 's/.*\/oc do\s*//i')
           echo "Extracted prompt: ${PROMPT}"
-          opencode run --model opencode-go/deepseek-v4-pro "${PROMPT}"
+          opencode run --model opencode-go/deepseek-v4-pro "${PROMPT}" 2>&1 | tee /tmp/opencode-do.log
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Post error comment on failure
+        if: steps.do_run.outputs.exit_code != '0'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          ERROR_TAIL=$(tail -n 20 /tmp/opencode-do.log 2>/dev/null || echo "No log captured")
+          BODY=$(printf '%b' "❌ **OpenCode /oc do encountered an error**\n\n\`\`\`\n${ERROR_TAIL}\n\`\`\`\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
+          gh api "repos/${REPO}/issues/${NUMBER}/comments" -f body="$BODY" || true
+
+      - name: Update progress comment
+        if: always() && steps.progress_comment.outputs.comment_id != ''
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS="✅ **OpenCode /oc do finished**"
+          elif [ "${{ job.status }}" == "failure" ]; then
+            STATUS="❌ **OpenCode /oc do failed**"
+          else
+            STATUS="⚠️ **OpenCode /oc do ended**"
+          fi
+          BODY=$(printf '%b' "${STATUS}\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" \
+            -X PATCH \
+            -f body="${BODY}" || true
