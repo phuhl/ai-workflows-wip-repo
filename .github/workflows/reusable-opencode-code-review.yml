@@ -57,7 +57,7 @@ jobs:
         run: |
           COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
             --jq '.id' \
-            -f body=$'🤖 **OpenCode is reviewing this PR...**\n\nThe code-review workflow has started. This comment will be updated when the run completes.' || echo "")
+            -f body=$(printf '%b' $'🤖 **OpenCode is reviewing this PR...**\n\nThe code-review workflow has started. This comment will be updated when the run completes.\n\n[Run ${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})') || echo "")
           echo "comment_id=${COMMENT_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Install OpenCode

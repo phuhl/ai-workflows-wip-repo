@@ -62,7 +62,7 @@ jobs:
         run: |
           COMMENT_ID=$(gh api "repos/${REPO}/issues/${NUMBER}/comments" \
             --jq '.id' \
-            -f body=$'🤖 **OpenCode is running your prompt...**\n\nThe `/oc do` command has started. This comment will be updated when the run completes.' || echo "")
+            -f body=$(printf '%b' $'🤖 **OpenCode is running your prompt...**\n\nThe `/oc do` command has started. This comment will be updated when the run completes.\n\n[Run ${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})') || echo "")
           echo "comment_id=${COMMENT_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Install OpenCode
