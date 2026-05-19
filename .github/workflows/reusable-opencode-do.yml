@@ -76,11 +76,15 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: max
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
         run: |
           COMMENT="${{ github.event.comment.body }}"
           PROMPT=$(echo "$COMMENT" | sed -E 's/.*\/oc do\s*//i')
-          echo "Extracted prompt: ${PROMPT}"
-          opencode run --model opencode-go/deepseek-v4-pro "${PROMPT}" 2>&1 | tee /tmp/opencode-do.log
+          echo "User prompt: ${PROMPT}"
+          FULL_PROMPT="You are responding to a /oc do command on repository ${REPO}, issue/PR #${NUMBER}. The user said: \"${PROMPT}\". Follow their instructions exactly. You have full git write access and can push commits, create/update PRs, and post comments."
+          echo "Full prompt: ${FULL_PROMPT}"
+          opencode run --model opencode-go/deepseek-v4-pro "${FULL_PROMPT}" 2>&1 | tee /tmp/opencode-do.log
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Post error comment on failure
