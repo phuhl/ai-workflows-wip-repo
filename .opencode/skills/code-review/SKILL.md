@@ -1,7 +1,7 @@
 ---
 name: code-review
 description: Review code changes in the current codebase. Invoke with commit range, e.g. "/code-review abc123..def456". Use whenever the user asks to review a commit range, PR, new feature, or recently changed file.
-allowed-tools: Read, Glob, Grep, Bash
+allowed-tools: Read, Glob, Grep, Bash, Todowrite
 context: fork
 subagent_type: general
 argument-hint: <from-commit>..<to-commit>

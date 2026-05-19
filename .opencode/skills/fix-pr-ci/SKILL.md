@@ -1,7 +1,7 @@
 ---
 name: fix-pr-ci
 description: Diagnose and fix failing CI checks on a pull request. Reads logs, fixes test/lint/build failures, re-triggers flaky runs, and confirms green. Use when CI is red on a PR, "fix the failing checks", "CI is broken", "tests are failing in the PR".
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
 argument-hint: [pr-number]
 ---
 

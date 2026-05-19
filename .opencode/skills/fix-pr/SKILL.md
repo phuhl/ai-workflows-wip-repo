@@ -1,7 +1,7 @@
 ---
 name: fix-pr
 description: Fix a PR that has failing CI or unresolved review comments. Checks out the branch, merges base, handles merge conflicts, diagnoses, applies fixes, commits, and pushes. The calling workflow manages the 'auto-review' label.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
 context: fork
 agent: general-purpose
 argument-hint: <pr-number> [ci-failing|review-comments]

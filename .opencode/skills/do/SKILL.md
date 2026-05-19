@@ -1,7 +1,7 @@
 ---
 name: do
 description: Execute an arbitrary user prompt on an issue or PR. Triggered by '/oc do <prompt>'.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
 context: fork
 agent: general-purpose
 argument-hint: <issue-or-pr-number> with prompt: <prompt>

@@ -1,7 +1,7 @@
 ---
 name: plan
 description: Read an issue and the codebase, then post a concise plan comment with risk analysis and implementation options. Triggered by '/oc plan'.
-allowed-tools: Read, Glob, Grep, Bash
+allowed-tools: Read, Glob, Grep, Bash, Todowrite
 context: fork
 agent: general-purpose
 argument-hint: <issue-number>

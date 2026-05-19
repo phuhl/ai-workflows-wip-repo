@@ -11,7 +11,7 @@ description: >
   "does this follow best practices?", or similar.
   This skill never posts comments to GitHub; it returns a structured
   report that the caller can act on or pass to review-pr for posting.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
 argument-hint: [<commit-range> | <file-path> | <pr-number>]
 ---
 
