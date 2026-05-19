@@ -82,7 +82,8 @@ jobs:
           NUMBER="${{ github.event.issue.number || github.event.pull_request.number }}"
           echo "User prompt: ${PROMPT}"
           echo "Issue/PR number: ${NUMBER}"
-          opencode run --model opencode-go/deepseek-v4-pro "Load the user-do skill. Do not load any other skill. Run it for issue/PR #${NUMBER}. The user said: \"${PROMPT}\"" 2>&1 | tee /tmp/opencode-do.log
+          printf '%s' "${PROMPT}" > /tmp/opencode-do-prompt.txt
+          opencode run --model opencode-go/deepseek-v4-pro "Load the user-do skill. Run it for issue/PR #${NUMBER}. Read the user prompt from /tmp/opencode-do-prompt.txt" 2>&1 | tee /tmp/opencode-do.log
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Post error comment on failure
