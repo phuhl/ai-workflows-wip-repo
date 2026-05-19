@@ -21,8 +21,18 @@ jobs:
       !contains(github.event.comment.body, '/oc code-review') &&
       !contains(github.event.comment.body, '/oc fix-pr') &&
       !contains(github.event.comment.body, '/oc plan') &&
+      !contains(github.event.comment.body, '/oc address-review') &&
+      !contains(github.event.comment.body, '/oc do') &&
       github.actor == 'phuhl'
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode.yml@master
+    secrets: inherit
+
+  opencode-do:
+    if: |
+      (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
+      contains(github.event.comment.body, '/oc do') &&
+      github.actor == 'phuhl'
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-do.yml@master
     secrets: inherit
 
   opencode-plan:

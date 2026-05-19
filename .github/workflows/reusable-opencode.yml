@@ -18,6 +18,7 @@ jobs:
       !contains(github.event.comment.body, '/oc complete-gate') &&
       !contains(github.event.comment.body, '/oc plan') &&
       !contains(github.event.comment.body, '/oc address-review') &&
+      !contains(github.event.comment.body, '/oc do') &&
        github.actor == 'phuhl'
     runs-on: ubuntu-latest
     permissions:
