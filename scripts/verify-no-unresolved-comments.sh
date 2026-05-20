@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Verify that no code-line review comments on a PR are left unaddressed.
-# A comment is "addressed" if it has at least one reply, regardless of author.
+# A comment is "addressed" if the last reply in its thread is from opencode[bot].
 #
 # Usage: bash verify-no-unresolved-comments.sh <pr-number> [repo]
 # Exits with 0 if clean, 1 if unresolved comments remain.
@@ -41,9 +41,11 @@ fi
 
 UNRESOLVED=0
 for ID in $STARTER_IDS; do
-  # Check if any reply references this comment
-  REPLY_COUNT=$(echo "$ALL_COMMENTS" | jq "[.[] | select(.in_reply_to_id == ${ID})] | length")
-  if [ "$REPLY_COUNT" -eq 0 ]; then
+  # A comment is addressed only if the LAST reply in the thread is from opencode[bot].
+  # This ensures that follow-up human replies (e.g. "this is still broken") are not
+  # mistaken for a resolved thread.
+  LAST_REPLY_USER=$(echo "$ALL_COMMENTS" | jq -r "[.[] | select(.in_reply_to_id == ${ID})] | sort_by(.id) | last | .user.login // \"\"")
+  if [ "$LAST_REPLY_USER" != "opencode[bot]" ]; then
     COMMENT_INFO=$(echo "$ALL_COMMENTS" | jq -r ".[] | select(.id == ${ID}) | \"  id=${ID}  file=\(.path):\(.line // \"?\")\"")
     echo "UNRESOLVED: $COMMENT_INFO"
     BODY_PREVIEW=$(echo "$ALL_COMMENTS" | jq -r ".[] | select(.id == ${ID}) | .body[:120]")
@@ -59,5 +61,5 @@ if [ "$UNRESOLVED" -gt 0 ]; then
   exit 1
 fi
 
-echo "All code-line review comments have been addressed (have replies)."
+echo "All code-line review comments have been addressed (last reply is from opencode[bot])."
 exit 0
