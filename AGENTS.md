@@ -52,6 +52,7 @@ Skills invoke these via `bash .opencode/skills/_shared/scripts/<name>.sh`:
 - **`format-and-commit.sh`** — Stages files, runs prettier/eslint, commits with the given message, and pushes. Usage: `format-and-commit.sh "<message>" <file...>`. Exit codes: 0=success, 1=usage error.
 - **`sync-base-branch.sh`** — Finds the PR for an issue number, checks out its head branch, and merges the latest base branch. Usage: `sync-base-branch.sh <issue-number>`. Exit codes: 0=success, 1=usage error, 2=no PR found, 3=merge conflict.
 - **`check-off-subtask.sh`** — Finds the "## Subtasks" comment on an issue and checks off a checkbox. Usage: `check-off-subtask.sh <issue-number> "<subtask-text>" [repo]`. Exit codes: 0=success, 1=usage error, 2=no repo, 3=no subtasks comment found.
+- **`post-review-reply.sh`** — Posts a reply to an existing code-line review comment thread using properly-typed JSON (in_reply_to as integer). Usage: `post-review-reply.sh <pr-number> <comment-id> "<body>"`. Exit codes: 0=success, 1=usage error.
 
 ## Plugins
 

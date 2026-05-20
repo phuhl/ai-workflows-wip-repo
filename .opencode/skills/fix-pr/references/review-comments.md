@@ -58,9 +58,9 @@ gh api "repos/{owner}/{repo}/pulls/comments/<comment_id>/reactions" --jq '[.[] |
 ```
 If there is a thumbs-down (`-1` / `THUMBS_DOWN`) reaction from a human user (not `"$BOT_USER"`):
 - **Reply and skip.** The user has manually triaged this bot suggestion as not applicable:
-   ```bash
-   gh api "repos/{owner}/{repo}/pulls/<pr-number>/comments" -f body="User triaged this suggestion out — skipping." -f in_reply_to=<comment_id>
-   ```
+  ```bash
+  bash .opencode/skills/_shared/scripts/post-review-reply.sh <pr-number> <comment_id> "User triaged this suggestion out — skipping."
+  ```
 - Mark the todo item `completed` — no code changes needed.
 
 If no user triage (no thumbs-down, or comment is from a human), proceed to address the comment:
@@ -71,13 +71,13 @@ If no user triage (no thumbs-down, or comment is from a human), proceed to addre
    ```
   Then reply to the comment thread:
   ```bash
-  gh api "repos/{owner}/{repo}/pulls/<pr-number>/comments" -f body="Addressed in commit: <description>" -f in_reply_to=<comment_id>
+  bash .opencode/skills/_shared/scripts/post-review-reply.sh <pr-number> <comment_id> "Addressed in commit: <description>"
   ```
 
 - **Push-back (suggestion is not appropriate, current code is intentional)** — reply explaining why:
   For code-line comments:
   ```bash
-  gh api "repos/{owner}/{repo}/pulls/<pr-number>/comments" -f body="<explanation of why the current code is correct or intentional>" -f in_reply_to=<comment_id>
+  bash .opencode/skills/_shared/scripts/post-review-reply.sh <pr-number> <comment_id> "<explanation of why the current code is correct or intentional>"
   ```
   For main-thread comments:
   ```bash

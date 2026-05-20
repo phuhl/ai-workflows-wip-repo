@@ -26,7 +26,7 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
      ```
    - For each thread-starter (`in_reply_to_id` is null, `user` is not `"$BOT_USER"`) that has no replies:
      - If the suggestion is valid → implement, commit, push.
-      - If not appropriate → reply with explanation via `gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" -f body="<explanation>" -f in_reply_to=<id>`.
+      - If not appropriate → reply with explanation via `bash .opencode/skills/_shared/scripts/post-review-reply.sh "$PR_NUMBER" <id> "<explanation>"`.
    - Verify after addressing:
      ```bash
      bash .ai-workflows/scripts/verify-no-unresolved-comments.sh "$PR_NUMBER" "$REPO"

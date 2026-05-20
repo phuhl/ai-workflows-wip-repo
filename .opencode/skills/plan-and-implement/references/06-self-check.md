@@ -28,7 +28,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
      ```
    - **If the suggestion is not appropriate** — reply explaining why the current code is correct or intentional:
      ```bash
-     gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" -f body="<explanation>" -f in_reply_to=<comment_id>
+     bash .opencode/skills/_shared/scripts/post-review-reply.sh "$PR_NUMBER" <comment_id> "<explanation>"
      ```
    - **If the comment is a question** — reply with your answer.
 
