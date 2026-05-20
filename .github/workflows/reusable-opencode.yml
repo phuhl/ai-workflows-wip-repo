@@ -47,11 +47,13 @@ jobs:
             --out-dir .opencode/skills
             echo "*" > .ai-workflows/.gitignore
 
+      - name: Install OpenCode
+        run: npm install -g opencode-ai@1.14.24
+
       - name: Run opencode
-        uses: anomalyco/opencode/github@latest
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
-        with:
-          model: opencode-go/deepseek-v4-pro
-          variant: max
+          VARIANT: max
+        run: opencode run --model opencode-go/deepseek-v4-pro "Handle the trigger event"
