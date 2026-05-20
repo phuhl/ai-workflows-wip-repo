@@ -72,10 +72,10 @@ if [ -n "${OUT_PLUGINS_DIR:-}" ] && [ -d "$OUT_PLUGINS_DIR" ]; then
 fi
 
 # 6. Ensure /tmp/** is allowed in opencode permissions (for temp file writes used by skills)
-if [ -f ".opencode.json" ]; then
+if [ -f "opencode.json" ]; then
   tmp_config=$(mktemp)
-  jq '.permission.external_directory["/tmp/**"] = "allow"' .opencode.json > "$tmp_config"
-  mv "$tmp_config" .opencode.json
+  jq '.permission.external_directory["/tmp/**"] = "allow"' opencode.json > "$tmp_config"
+  mv "$tmp_config" opencode.json
 else
-  echo '{ "permission": { "external_directory": { "/tmp/**": "allow" } } }' > .opencode.json
+  echo '{ "permission": { "external_directory": { "/tmp/**": "allow" } } }' > opencode.json
 fi

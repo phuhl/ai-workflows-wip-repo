@@ -116,4 +116,4 @@ bash scripts/verify-no-unresolved-comments.sh <pr-number>
 
 - `USER_GUIDE.md` — End-user tutorial for the OpenCode workflow (not for AI consumption).
 - `README.md` — Setup instructions for target repos.
-- `.opencode.json` — OpenCode CLI config pointing to skill paths.
+- `opencode.json` — OpenCode CLI config pointing to skill paths.
