@@ -24,6 +24,5 @@ jq -n \
     path: $path,
     body: $body,
     line: $line,
-    side: $side,
-    subject_type: "line"
+    side: $side
   }' | gh api "repos/{owner}/{repo}/pulls/${PR_NUMBER}/comments" --input -
