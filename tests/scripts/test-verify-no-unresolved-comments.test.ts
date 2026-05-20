@@ -52,7 +52,7 @@ describe("verifyNoUnresolvedComments", () => {
       await import("../../scripts/verify-no-unresolved-comments");
     const result = verifyComments(42, "test-org/test-repo");
     expect(result.ok).toBe(true);
-    expect(result.output).toContain("last reply is from opencode[bot]");
+    expect(result.output).toContain("last reply is from the bot");
   });
 
   it("fails with unresolved human comments", async () => {
