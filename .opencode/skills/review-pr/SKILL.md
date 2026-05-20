@@ -59,7 +59,7 @@ The goal is to keep the review focused on the feature at hand. Do **not** post a
 
 1. For each **filtered** finding that maps to a line in the PR diff, post an inline review comment on the head SHA with `side="RIGHT"`:
     ```bash
-    bash .opencode/skills/review-pr/scripts/post-review-comment.sh \
+    npx tsx .opencode/skills/review-pr/scripts/post-review-comment.ts \
       <pr-number> \
       <head-sha> \
       "path/to/file.ts" \

@@ -17,7 +17,7 @@ Read the failed CI logs, understand the error, fix the root cause, and push.
 
 3. Format and commit:
    ```bash
-   bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: resolve CI failure – <description> (#<issue_number>)" <specific-files>
+   npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: resolve CI failure – <description> (#<issue_number>)" <specific-files>
    ```
 
 4. If the `fix-pr-ci` skill is available, you may invoke it for deeper diagnostics:

@@ -59,7 +59,7 @@ If no user triage (no thumbs-down, or comment is from a human), proceed to addre
 
 - **Code change requested (suggestion is valid)** — implement the change, then reply to the comment so it is marked as resolved:
    ```bash
-   bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: address review comment – <description>" <specific-files>
+   npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: address review comment – <description>" <specific-files>
    ```
   Then reply to the comment thread:
   ```bash
@@ -82,7 +82,7 @@ If no user triage (no thumbs-down, or comment is from a human), proceed to addre
 
 After all todo items are completed, run the verification script:
 ```bash
-bash .ai-workflows/scripts/verify-no-unresolved-comments.sh <pr-number> "{owner}/{repo}"
+npx tsx .ai-workflows/scripts/verify-no-unresolved-comments.ts <pr-number> "{owner}/{repo}"
 ```
 If it reports unresolved comments, add them as new todo items and address them. **When re-processing a comment from the verification stage, you MUST read the full thread — not just the original comment body.** Fetch all replies to understand the human follow-up context:
 

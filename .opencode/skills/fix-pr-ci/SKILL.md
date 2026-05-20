@@ -52,7 +52,7 @@ After applying fixes, stage and push. **Do not run tests locally.**
 Stage only the files you changed (avoid accidentally staging secrets):
 
 ```bash
-bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: resolve CI failure – <what broke>" <specific-files>
+npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: resolve CI failure – <what broke>" <specific-files>
 ```
 
 ## Step 4 — Confirm CI passes

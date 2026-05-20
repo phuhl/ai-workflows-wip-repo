@@ -30,9 +30,9 @@ apparts-js/ai-workflows/
 │   ├── review-pr/
 │   └── verify-tests/           # generic template
 ├── scripts/
-│   ├── bootstrap-skills.sh              # Merges shared + local skills at CI time
-│   ├── verify-bullet-length.sh          # Checks summary bullets ≤ 200 chars
-│   └── verify-no-unresolved-comments.sh # Verifies all code-line review comments addressed
+│   ├── bootstrap-skills.ts              # Merges shared + local skills at CI time
+│   ├── verify-bullet-length.ts          # Checks summary bullets ≤ 200 chars
+│   └── verify-no-unresolved-comments.ts # Verifies all code-line review comments addressed
 ├── wrappers/
 │   ├── master/                 # Single wrapper that handles all triggers
 │   │   └── opencode-master.yml
@@ -100,7 +100,7 @@ Then remove any duplicated generic skills/workflows from the target repo.
 
 ## Skill overrides
 
-Before OpenCode runs, the reusable workflow executes `scripts/bootstrap-skills.sh`, which:
+Before OpenCode runs, the reusable workflow executes `npx tsx scripts/bootstrap-skills.ts`, which:
 
 1. Copies all shared skills into `.opencode/skills/`.
 2. Overlays any local skills on top (local files take precedence).

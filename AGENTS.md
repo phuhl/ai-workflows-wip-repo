@@ -4,7 +4,7 @@
 
 A central repository of **OpenCode AI skills** and **reusable GitHub Actions workflows** consumed by other repos. This repo itself is not an application — it has no app entrypoint, no build step, and no test suite.
 
-Target repos copy wrapper workflow files from `wrappers/` into their own `.github/workflows/`. At CI time, `scripts/bootstrap-skills.sh` copies shared skills and plugins into the target repo's `.opencode/`.
+Target repos copy wrapper workflow files from `wrappers/` into their own `.github/workflows/`. At CI time, `scripts/bootstrap-skills.ts` copies shared skills and plugins into the target repo's `.opencode/` (run via `npx tsx`).
 
 ## Directory ownership
 
@@ -14,7 +14,7 @@ Target repos copy wrapper workflow files from `wrappers/` into their own `.githu
 | `.opencode/skills/` | Shared AI skill definitions (Markdown + YAML frontmatter) | Yes |
 | `.opencode/skills/_shared/` | Shared references and scripts used by multiple skills | Yes |
 | `.opencode/plugins/` | Shared OpenCode plugins (TypeScript, consumed at runtime) | Yes |
-| `scripts/` | Bootstrap and verification shell scripts | Yes |
+| `scripts/` | Bootstrap and verification TypeScript scripts | Yes |
 | `wrappers/` | Target-repo workflow wrappers (copied, not called directly) | Yes |
 
 ## Skill format
@@ -47,11 +47,11 @@ Skills load these via `Read .opencode/skills/_shared/references/<name>.md` inste
 
 ### Shared scripts (`_shared/scripts/`)
 
-Skills invoke these via `bash .opencode/skills/_shared/scripts/<name>.sh`:
+Skills invoke these via `npx tsx .opencode/skills/_shared/scripts/<name>.ts`:
 
-- **`format-and-commit.sh`** — Stages files, runs prettier/eslint, commits with the given message, and pushes. Usage: `format-and-commit.sh "<message>" <file...>`. Exit codes: 0=success, 1=usage error.
-- **`sync-base-branch.sh`** — Finds the PR for an issue number, checks out its head branch, and merges the latest base branch. Usage: `sync-base-branch.sh <issue-number>`. Exit codes: 0=success, 1=usage error, 2=no PR found, 3=merge conflict.
-- **`check-off-subtask.sh`** — Finds the "## Subtasks" comment on an issue and checks off a checkbox. Usage: `check-off-subtask.sh <issue-number> "<subtask-text>" [repo]`. Exit codes: 0=success, 1=usage error, 2=no repo, 3=no subtasks comment found.
+- **`format-and-commit.ts`** — Stages files, runs prettier/eslint, commits with the given message, and pushes. Usage: `format-and-commit.ts "<message>" <file...>`. Exit codes: 0=success, 1=usage error.
+- **`sync-base-branch.ts`** — Finds the PR for an issue number, checks out its head branch, and merges the latest base branch. Usage: `sync-base-branch.ts <issue-number>`. Exit codes: 0=success, 1=usage error, 2=no PR found, 3=merge conflict.
+- **`check-off-subtask.ts`** — Finds the "## Subtasks" comment on an issue and checks off a checkbox. Usage: `check-off-subtask.ts <issue-number> "<subtask-text>" [repo]`. Exit codes: 0=success, 1=usage error, 2=no repo, 3=no subtasks comment found.
 
 ## Plugins
 
@@ -107,24 +107,24 @@ Skills are told: "Do not run tests locally on target repositories." CI is the so
 ## Verification scripts
 
 This repo has two validation scripts used during CI:
-- `scripts/verify-bullet-length.sh` — PR summary bullets must be ≤ 200 chars.
-- `scripts/verify-no-unresolved-comments.sh` — All code-line review comment threads (any author) must have `opencode[bot]` as the last reply before finalizing.
+- `scripts/verify-bullet-length.ts` — PR summary bullets must be ≤ 200 chars.
+- `scripts/verify-no-unresolved-comments.ts` — All code-line review comment threads (any author) must have `opencode[bot]` as the last reply before finalizing.
 
 ## Local test suite (this repo only)
 
 Run before pushing changes to catch regressions early:
 
 ```bash
-npm test                 # or: bash tests/run.sh
+npm test                 # or: npx tsx tests/run.ts
 ```
 
 The suite has three layers:
 
-1. **Structural validation** (`tests/validate/`) — Checks skill frontmatter, reference integrity, wrapper→workflow consistency, and YAML syntax across all `.yml` and `SKILL.md` files.
-2. **Shell script tests** (`tests/scripts/`) — Tests `bootstrap-skills.sh`, `verify-bullet-length.sh`, `verify-no-unresolved-comments.sh`, `format-and-commit.sh`, `sync-base-branch.sh`, and `check-off-subtask.sh` (mocked `gh` CLI via `tests/helpers/mock-gh` with fixture JSON).
-3. **Plugin unit tests** (`tests/plugins/`) — Vitest tests for `file-hook.ts` and `git-guard.ts` (run from `.opencode/`).
+1. **Structural validation** (`tests/validate/`) — Checks skill frontmatter, reference integrity, wrapper→workflow consistency, and YAML syntax across all `.yml` and `SKILL.md` files (vitest tests).
+2. **Script tests** (`tests/scripts/`) — Vitest tests for `bootstrap-skills.ts`, `verify-bullet-length.ts`, `verify-no-unresolved-comments.ts`, `format-and-commit.ts`, `sync-base-branch.ts`, and `check-off-subtask.ts` (mocked `gh` CLI via vitest mocks/fixtures).
+3. **Plugin unit tests** — Vitest tests for `file-hook.ts` and `git-guard.ts` (run from `.opencode/`).
 
-Prerequisites: `vitest` installed in `.opencode/` (already present), Python `yaml` module for YAML validation (`pip install pyyaml` if missing).
+Prerequisites: `vitest` and `tsx` installed (run `npm install`).
 
 ## Conventions
 
@@ -139,30 +139,19 @@ Prerequisites: `vitest` installed in `.opencode/` (already present), Python `yam
 
 ```bash
 # Run all local tests before pushing
-npm test                     # or: bash tests/run.sh
+npm test                     # or: npx tsx tests/run.ts
 
-# Run only structural validation
-bash tests/validate/check-skill-frontmatter.sh
-bash tests/validate/check-references.sh
-bash tests/validate/check-wrapper-consistency.sh
-bash tests/validate/check-yaml-syntax.sh
-
-# Run only shell script tests
-bash tests/scripts/test-bootstrap-skills.sh
-bash tests/scripts/test-verify-bullet-length.sh
-bash tests/scripts/test-verify-no-unresolved-comments.sh
-bash tests/scripts/test-format-and-commit.sh
-bash tests/scripts/test-sync-base-branch.sh
-bash tests/scripts/test-check-off-subtask.sh
+# Run only vitest tests
+npx vitest run
 
 # Run only plugin tests
 cd .opencode && npx vitest run
 
 # Verify bullet length for a PR summary
-bash scripts/verify-bullet-length.sh "bullet 1" "bullet 2"
+npx tsx scripts/verify-bullet-length.ts "bullet 1" "bullet 2"
 
 # Verify all review comments are addressed on a PR
-bash scripts/verify-no-unresolved-comments.sh <pr-number>
+npx tsx scripts/verify-no-unresolved-comments.ts <pr-number>
 ```
 
 ## References

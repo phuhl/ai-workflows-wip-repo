@@ -23,7 +23,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
 3. For each such comment:
    - **If the suggestion is valid** — implement the code change. Format, commit, push:
      ```bash
-     bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: address review comment — <description> (#${ARGUMENTS})" <specific-files>
+     npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: address review comment — <description> (#${ARGUMENTS})" <specific-files>
      ```
    - **If the suggestion is not appropriate** — reply explaining why the current code is correct or intentional:
      ```bash
@@ -33,7 +33,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
 
 4. After all are addressed, run the verification script:
    ```bash
-   bash .ai-workflows/scripts/verify-no-unresolved-comments.sh "$PR_NUMBER" "$REPO"
+   npx tsx .ai-workflows/scripts/verify-no-unresolved-comments.ts "$PR_NUMBER" "$REPO"
    ```
    If it reports unresolved comments, address them and re-verify until clean.
 
@@ -42,7 +42,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
 ### 1. Find PR and merge base
    ```bash
    PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
-   bash .opencode/skills/_shared/scripts/sync-base-branch.sh "$ARGUMENTS" || {
+   npx tsx .opencode/skills/_shared/scripts/sync-base-branch.ts "$ARGUMENTS" || {
      echo "Merge conflicts detected. Stopping."
      exit 1
    }
@@ -71,7 +71,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
    - Apply the provided fix using `Write` or `Edit`.
     - Format and commit:
       ```bash
-      bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: resolve self-check finding – <description> (#${ARGUMENTS})" <specific-files>
+      npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: resolve self-check finding – <description> (#${ARGUMENTS})" <specific-files>
       ```
 
 6. Re-run the four audits. Repeat steps 4–6 until no `must-fix` items remain.

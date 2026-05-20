@@ -38,7 +38,7 @@ PROMPT=$(cat .opencode/do-prompt.txt 2>/dev/null || echo "$ARGUMENTS")
 3. **Execute the user's instructions.** You have full git write access — you can modify files, push commits, create PR comments, and interact with the repository.
 4. **Before committing**, always use the shared format-and-commit script:
    ```bash
-   bash .opencode/skills/_shared/scripts/format-and-commit.sh "<descriptive message>" <specific-files>
+   npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "<descriptive message>" <specific-files>
    ```
 5. **After finishing**, post a brief comment summarizing what was done.
 

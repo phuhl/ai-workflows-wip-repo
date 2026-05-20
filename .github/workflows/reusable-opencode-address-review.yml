@@ -47,7 +47,7 @@ jobs:
 
       - name: Bootstrap skills
         run: |
-          bash .ai-workflows/scripts/bootstrap-skills.sh \
+          npx tsx .ai-workflows/scripts/bootstrap-skills.ts \
             --shared-dir .ai-workflows/.opencode/skills \
             --local-dir .opencode/skills \
             --out-dir .opencode/skills
