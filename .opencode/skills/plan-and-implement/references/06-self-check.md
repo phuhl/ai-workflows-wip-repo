@@ -56,15 +56,15 @@ Before running audits, ensure every code-line review comment on this PR is handl
    RANGE="${BASE}..HEAD"
    ```
 
-3. Run the four audit skills **in parallel agents** and capture their outputs:
-   Launch all four at the same time using the Task tool:
+3. Run the four audit skills **in parallel** and capture their outputs:
+   Launch all four at the same time using the Skill tool:
    ```
-   Task("code-review", args=RANGE, subagent_type="general")
-   Task("verify-tests", args=RANGE, subagent_type="general")
-   Task("code-guidelines-check", args=RANGE, subagent_type="general")
-   Task("deduplication-check", args=RANGE, subagent_type="general")
+   Skill("code-review", args=RANGE)
+   Skill("verify-tests", args=RANGE)
+   Skill("code-guidelines-check", args=RANGE)
+   Skill("deduplication-check", args=RANGE)
    ```
-   Save each agent's output to a temp file immediately as they return. Do not run them sequentially — they are independent and should execute in parallel.
+   Save each skill's output to a temp file immediately as they return. Do not run them sequentially — they are independent and should execute in parallel.
 
 4. Parse the **Actionable findings** sections for `**severity:** must-fix`.
 
