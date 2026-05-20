@@ -13,6 +13,21 @@ If no PR number was given, find the PR for the current branch:
 gh pr view --json number -q .number
 ```
 
+## Context summary
+
+Before resolving conflicts, launch a subagent to understand what the PR is about — this helps you make the right choices when merging conflicting code.
+
+1. Find the associated issue:
+   ```bash
+   ISSUE_NUM=$(gh pr view <pr-number> --json headRefName -q '.headRefName' | grep -oE '^[0-9]+' || true)
+   if [ -z "$ISSUE_NUM" ]; then
+     ISSUE_NUM=$(gh pr view <pr-number> --json body -q '.body' | grep -oEi '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)[[:space:]]*#[0-9]+' | grep -oE '[0-9]+' | head -1)
+   fi
+   ```
+
+2. Read `.opencode/skills/_shared/references/context-summary.md`.
+3. Follow Step 1 and Step 2. Use the PR number and `$ISSUE_NUM` (pass "no issue found" if empty). When reading the summary, pay special attention to the **Description** and **Critical gotchas** — these will guide which side of a conflict to keep or how to merge both.
+
 ## Step 1 — Check out the branch and identify the base
 
 ```bash

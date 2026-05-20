@@ -43,6 +43,14 @@ You are invoked to drive an issue labeled `opencode` to completion.
    fi
    ```
 
+## Context summary
+
+Before proceeding, launch a subagent to distill the issue, comments, PR, and review feedback into a compact summary. This prevents the main context from being cluttered with raw comments and surfaces gotchas that earlier attempts may have hit.
+
+1. Read `.opencode/skills/_shared/references/context-summary.md`.
+2. Follow Step 1 (determine parameters) and Step 2 (launch the Task subagent). Use `$ARGUMENTS` for the issue number. If `$PR_NUMBER` was set in Setup, pass it; otherwise pass "no PR yet".
+3. After the subagent returns, note the key gotchas to the user in 1–2 lines, then proceed to State detection.
+
 ## State detection
 
 Check these conditions in order. The first matching condition determines the state.

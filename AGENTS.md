@@ -44,6 +44,7 @@ Skills load these via `Read .opencode/skills/_shared/references/<name>.md` inste
 
 - **`post-write-hook.md`** — Post-write formatting behavior (prettier, eslint, tsc).
 - **`git-safety.md`** — Git safety rules (never stage protected directories).
+- **`context-summary.md`** — Launches a subagent (via Task tool) to independently read issue body, issue comments, PR body, PR comments, and review comments, then returns a concise structured summary highlighting gotchas, past decisions, and unresolved feedback. Used by implement skills (`plan-and-implement`, `fix-pr`, `resolve-pr-conflicts`) before making any code changes.
 
 ### Shared scripts (`_shared/scripts/`)
 
