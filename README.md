@@ -106,6 +106,11 @@ Add a `.opencode.json` file to the **root** of your target repo so the OpenCode 
 {
   "skills": {
     "paths": [".opencode/skills"]
+  },
+  "permission": {
+    "external_directory": {
+      "/tmp/**": "allow"
+    }
   }
 }
 ```
