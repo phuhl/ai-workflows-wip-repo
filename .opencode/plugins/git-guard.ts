@@ -18,9 +18,12 @@ export const GitGuard: Plugin = async ({ client }) => {
       if (!/^git\s+(add|commit)\b/.test(cmd.trim())) return
 
       try {
-        const stdout = execSync("git diff --cached --name-only", {
-          encoding: "utf-8",
-        })
+        // Only guard NEW files (--diff-filter=A means "Added", i.e. previously untracked).
+        // Pre-existing tracked files in these dirs are left alone.
+        const stdout = execSync(
+          "git diff --cached --diff-filter=A --name-only",
+          { encoding: "utf-8" }
+        )
         const stagedFiles = stdout.trim().split("\n").filter(Boolean)
         const dangerous = stagedFiles.filter((f) =>
           DANGEROUS_PREFIXES.some((p) => f.startsWith(p))
@@ -33,7 +36,7 @@ export const GitGuard: Plugin = async ({ client }) => {
             body: {
               service: "git-guard",
               level: "warn",
-              message: `Unstaged ${dangerous.length} ai-workflow file(s)`,
+              message: `Unstaged ${dangerous.length} newly-added ai-workflow file(s)`,
               extra: { unstaged: dangerous },
             },
           })
