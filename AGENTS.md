@@ -97,7 +97,7 @@ This repo has two validation scripts used during CI:
 - **Keep AGENTS.md in sync**: Any change that adds, removes, or renames skills, scripts, plugins, workflows, or changes their behavior must update AGENTS.md accordingly.
 - **Actor gating**: All workflows gate on `github.actor == 'phuhl'` (hardcoded, known temporary limitation).
 - **PR stacking**: Issue comments with "stack on #42" or "base on #42" cause `plan-and-implement` to use that PR's branch as the base.
-- **OpenCode config**: `opencode.json` sets `skills.paths` to `[".opencode/skills"]`. Target repos need this too.
+- **OpenCode config**: `opencode.json` sets `skills.paths` to `[".opencode/skills"]` and allows `/tmp/**` via `external_directory` permission. Target repos need this too.
 
 ## Key commands
 
