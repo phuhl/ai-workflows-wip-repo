@@ -65,7 +65,7 @@ jobs:
           BODY=$'🤖 **OpenCode is fixing this PR...**\n\nThe fix-pr skill has started. This comment will be updated when the run completes.\n\n[Run ${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})'
           COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
             --jq '.id' \
-            -f body="$BODY") || echo "")
+            -f body="$BODY" || echo "")
           echo "comment_id=${COMMENT_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Remove auto-review label
