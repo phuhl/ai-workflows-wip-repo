@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Verify that no code-line review comments on a PR are left unaddressed.
-# A comment is "addressed" if it has at least one reply, or if it was posted
-# by opencode[bot] (self-comments don't count).
+# A comment is "addressed" if it has at least one reply, regardless of author.
 #
 # Usage: bash verify-no-unresolved-comments.sh <pr-number> [repo]
 # Exits with 0 if clean, 1 if unresolved comments remain.
@@ -31,13 +30,12 @@ if [ "$ALL_COMMENTS" = "[]" ] || [ -z "$ALL_COMMENTS" ]; then
   exit 0
 fi
 
-# Thread starters: comments with in_reply_to_id == null and not from opencode[bot]
-# Collect their IDs
-THREAD_STARTERS=$(echo "$ALL_COMMENTS" | jq '[.[] | select(.in_reply_to_id == null and .user.login != "opencode[bot]")]')
+# Thread starters: all comments that start a thread (in_reply_to_id == null), regardless of author
+THREAD_STARTERS=$(echo "$ALL_COMMENTS" | jq '[.[] | select(.in_reply_to_id == null)]')
 STARTER_IDS=$(echo "$THREAD_STARTERS" | jq -r '.[].id')
 
 if [ -z "$STARTER_IDS" ] || [ "$STARTER_IDS" = "" ]; then
-  echo "All code-line review comments are from opencode[bot]. No human review comments to address."
+  echo "No code-line review comment threads found."
   exit 0
 fi
 
