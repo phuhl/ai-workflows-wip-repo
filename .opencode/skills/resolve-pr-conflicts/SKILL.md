@@ -1,7 +1,7 @@
 ---
 name: resolve-pr-conflicts
 description: Resolve merge conflicts on a pull request by rebasing onto its base branch, fixing each conflict thoughtfully, verifying tests pass, and force-pushing. Use when a PR shows merge conflicts, "branch is out of date", "conflicts need resolving", "can't merge due to conflicts".
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Task
 argument-hint: [pr-number]
 ---
 

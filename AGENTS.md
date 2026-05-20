@@ -122,7 +122,7 @@ npm test                 # or: npx tsx tests/run.ts
 
 The suite has three layers:
 
-1. **Structural validation** (`tests/validate/`) — Checks skill frontmatter, reference integrity, wrapper→workflow consistency, and YAML syntax across all `.yml` and `SKILL.md` files (vitest tests).
+1. **Structural validation** (`tests/validate/`) — Checks skill frontmatter, reference integrity, tool permission requirements (detects if skills reference tools they haven't declared in `allowed-tools`), wrapper→workflow consistency, and YAML syntax across all `.yml` and `SKILL.md` files (vitest tests).
 2. **Script tests** (`tests/scripts/`) — Vitest tests for `bootstrap-skills.ts`, `verify-bullet-length.ts`, `verify-no-unresolved-comments.ts`, `format-and-commit.ts`, `sync-base-branch.ts`, and `check-off-subtask.ts` (mocked `gh` CLI via vitest mocks/fixtures).
 3. **Plugin unit tests** — Vitest tests for `file-hook.ts` and `git-guard.ts` (run from `.opencode/`).
 
