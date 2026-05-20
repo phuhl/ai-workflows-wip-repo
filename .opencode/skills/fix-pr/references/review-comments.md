@@ -5,6 +5,14 @@ Address every unresolved comment on the PR — both code-line review comments AN
 
 ## Steps
 
+### 0. Detect the bot username
+
+The GH_TOKEN is the GitHub App token, so `gh api /user` returns the bot.
+```bash
+BOT_USER=$(gh api /user -q '.login' 2>/dev/null || echo "opencode[bot]")
+echo "Bot user: ${BOT_USER}"
+```
+
 ### 1. Fetch all comments
 
 Fetch code-line review comments (save to a temp file):
@@ -23,10 +31,10 @@ Use the `todowrite` tool to create ONE todo item per comment that needs attentio
 
 **Code-line review comments** — include if ALL of these are true:
 - `in_reply_to_id` is null (thread starter, not a reply)
-- The **last** reply in the thread is NOT from `"opencode[bot]"`. To determine this: find all comments where `in_reply_to_id` == this comment's `id`, sort them by `id` ascending, and check the `user.login` of the last one. If the last reply is from `"opencode[bot]"`, the thread is already handled — skip it. If the last reply is from anyone else (including a human who replied after the bot), the comment needs attention.
+- The **last** reply in the thread is NOT from `"$BOT_USER"`. To determine this: find all comments where `in_reply_to_id` == this comment's `id`, sort them by `id` ascending, and check the `user.login` of the last one. If the last reply is from `"$BOT_USER"`, the thread is already handled — skip it. If the last reply is from anyone else (including a human who replied after the bot), the comment needs attention.
 
 **Main-thread PR comments** — include if:
-- Does NOT already have a reply from `"opencode[bot]"`
+- Does NOT already have a reply from `"$BOT_USER"`
 - Is NOT a workflow progress/status update (content matches patterns like `**OpenCode**`, `✅`, `❌`, `⚠️` combined with "finished", "failed", "error", or "started")
 
 Format each todo item as:
@@ -44,15 +52,15 @@ Set the current item to `in_progress`, handle it, then mark it `completed`. Work
 
 **For each comment, first check for user triage on bot comments:**
 
-If the comment author is `"opencode[bot]"`, fetch reactions:
+If the comment author is `"$BOT_USER"`, fetch reactions:
 ```bash
 gh api "repos/{owner}/{repo}/pulls/comments/<comment_id>/reactions" --jq '[.[] | select(.content == "-1") | {user: .user.login, content}]'
 ```
-If there is a thumbs-down (`-1` / `THUMBS_DOWN`) reaction from a human user (not `"opencode[bot]"`):
+If there is a thumbs-down (`-1` / `THUMBS_DOWN`) reaction from a human user (not `"$BOT_USER"`):
 - **Reply and skip.** The user has manually triaged this bot suggestion as not applicable:
-  ```bash
-  gh api "repos/{owner}/{repo}/pulls/<pr-number>/comments" -f body="User triaged this suggestion out — skipping." -f in_reply_to=<comment_id>
-  ```
+   ```bash
+   gh api "repos/{owner}/{repo}/pulls/<pr-number>/comments" -f body="User triaged this suggestion out — skipping." -f in_reply_to=<comment_id>
+   ```
 - Mark the todo item `completed` — no code changes needed.
 
 If no user triage (no thumbs-down, or comment is from a human), proceed to address the comment:

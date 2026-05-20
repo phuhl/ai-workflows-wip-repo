@@ -108,7 +108,7 @@ Skills are told: "Do not run tests locally on target repositories." CI is the so
 
 This repo has two validation scripts used during CI:
 - `scripts/verify-bullet-length.sh` — PR summary bullets must be ≤ 200 chars.
-- `scripts/verify-no-unresolved-comments.sh` — All code-line review comment threads (any author) must have `opencode[bot]` as the last reply before finalizing.
+- `scripts/verify-no-unresolved-comments.sh` — All code-line review comment threads (any author) must have the bot as the last reply before finalizing. The bot username is auto-detected via `gh api /user` (fallback: `opencode[bot]`).
 
 ## Local test suite (this repo only)
 

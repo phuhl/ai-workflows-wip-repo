@@ -19,13 +19,14 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
    If merge conflicts occur, invoke `resolve-pr-conflicts` and stop.
 
 2. **Address pending code-line review comments before implementing** (add to your todo list):
-   - Fetch all PR code-line review comments:
+   - Detect the bot username and fetch all PR code-line review comments:
      ```bash
+     BOT_USER=$(gh api /user -q '.login' 2>/dev/null || echo "opencode[bot]")
      gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --jq '.[] | {id, path, line, body, in_reply_to_id, user: .user.login}'
      ```
-   - For each thread-starter (`in_reply_to_id` is null, `user` is not `"opencode[bot]"`) that has no replies:
+   - For each thread-starter (`in_reply_to_id` is null, `user` is not `"$BOT_USER"`) that has no replies:
      - If the suggestion is valid → implement, commit, push.
-     - If not appropriate → reply with explanation via `gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" -f body="<explanation>" -f in_reply_to=<id>`.
+      - If not appropriate → reply with explanation via `gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" -f body="<explanation>" -f in_reply_to=<id>`.
    - Verify after addressing:
      ```bash
      bash .ai-workflows/scripts/verify-no-unresolved-comments.sh "$PR_NUMBER" "$REPO"

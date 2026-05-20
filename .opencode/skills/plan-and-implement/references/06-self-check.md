@@ -12,13 +12,14 @@ Run the same audits that `review-pr` runs and fix any `must-fix` findings before
 
 Before running audits, ensure every code-line review comment on this PR is handled. Track this with the todowrite tool:
 
-1. Fetch all code-line review comments (not general PR comments):
+1. Detect the bot username and fetch all code-line review comments:
    ```bash
+   BOT_USER=$(gh api /user -q '.login' 2>/dev/null || echo "opencode[bot]")
    PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
    gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --jq '.[] | {id, path, line, body, in_reply_to_id, user: .user.login}'
    ```
 
-2. Filter to keep only **thread-starter** comments where `in_reply_to_id` is null and `user` is not `"opencode[bot]"`. These are the comments from human reviewers that need your attention.
+2. Filter to keep only **thread-starter** comments where `in_reply_to_id` is null and `user` is not `"$BOT_USER"`. These are the comments from human reviewers that need your attention.
 
 3. For each such comment:
    - **If the suggestion is valid** — implement the code change. Format, commit, push:
