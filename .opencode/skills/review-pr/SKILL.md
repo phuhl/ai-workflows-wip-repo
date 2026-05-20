@@ -1,7 +1,7 @@
 ---
 name: review-pr
 description: Run code-review and verify-tests audits on a PR, filter findings for relevance and scope, post only targeted review comments, and if clean set the PR ready for review and request phuhl. Triggered by '/oc code-review'.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Skill
 context: fork
 agent: general-purpose
 argument-hint: <pr-number>
