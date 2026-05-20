@@ -17,15 +17,17 @@ export function postReviewComment(
   };
 
   const json = JSON.stringify(payload);
+  const repo = process.env.GITHUB_REPOSITORY || process.env.GH_REPO || "";
 
-  execSync(
-    `gh api "repos/{owner}/{repo}/pulls/${prNumber}/comments" --input -`,
-    {
-      input: json,
-      encoding: "utf-8",
-      stdio: "inherit",
-    },
-  );
+  if (!repo) {
+    throw new Error("Missing repo context — set GITHUB_REPOSITORY or GH_REPO");
+  }
+
+  execSync(`gh api "repos/${repo}/pulls/${prNumber}/comments" --input -`, {
+    input: json,
+    encoding: "utf-8",
+    stdio: "inherit",
+  });
 }
 
 function main(): void {
