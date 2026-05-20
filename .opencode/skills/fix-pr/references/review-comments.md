@@ -23,7 +23,7 @@ Use the `todowrite` tool to create ONE todo item per comment that needs attentio
 
 **Code-line review comments** — include if ALL of these are true:
 - `in_reply_to_id` is null (thread starter, not a reply)
-- Does NOT already have a reply from `"opencode[bot]"` (use the full comments list to cross-check: is there any comment where `in_reply_to_id` == this comment's `id` and `user.login` == `"opencode[bot]"`?)
+- The **last** reply in the thread is NOT from `"opencode[bot]"`. To determine this: find all comments where `in_reply_to_id` == this comment's `id`, sort them by `id` ascending, and check the `user.login` of the last one. If the last reply is from `"opencode[bot]"`, the thread is already handled — skip it. If the last reply is from anyone else (including a human who replied after the bot), the comment needs attention.
 
 **Main-thread PR comments** — include if:
 - Does NOT already have a reply from `"opencode[bot]"`
@@ -89,7 +89,14 @@ After all todo items are completed, run the verification script:
 ```bash
 bash .ai-workflows/scripts/verify-no-unresolved-comments.sh <pr-number> "{owner}/{repo}"
 ```
-If it reports unresolved comments, add them as new todo items and address them.
+If it reports unresolved comments, add them as new todo items and address them. **When re-processing a comment from the verification stage, you MUST read the full thread — not just the original comment body.** Fetch all replies to understand the human follow-up context:
+
+```bash
+# Read the full thread for comment <id>
+gh api "repos/{owner}/{repo}/pulls/comments" --jq ".[] | select(.id == <id> or .in_reply_to_id == <id>) | {id, user: .user.login, body}" | jq -s 'sort_by(.id)'
+```
+
+Base your action on the **most recent human reply in the thread**, not just the original comment. For every comment addressed in the verification pass, you MUST post a reply explaining what action was taken (and why), just as in step 3.
 
 ### 5. Post summary
 
