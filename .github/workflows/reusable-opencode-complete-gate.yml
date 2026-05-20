@@ -626,6 +626,7 @@ jobs:
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
           REPO: ${{ github.repository }}
         run: |
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "auto-review" || true
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "ready for review"
 
       - name: Remove gate-running label
