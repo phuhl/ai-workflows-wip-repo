@@ -23,12 +23,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
 3. For each such comment:
    - **If the suggestion is valid** — implement the code change. Format, commit, push:
      ```bash
-     git add <specific-files>
-     npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-     npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
-     git add $(git diff --cached --name-only) 2>/dev/null || true
-     git commit -m "fix: address review comment — <description> (#${ARGUMENTS})"
-     git push
+     bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: address review comment — <description> (#${ARGUMENTS})" <specific-files>
      ```
    - **If the suggestion is not appropriate** — reply explaining why the current code is correct or intentional:
      ```bash
@@ -47,11 +42,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
 ### 1. Find PR and merge base
    ```bash
    PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
-   BASE=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
-   git fetch origin
-   git checkout $(gh pr view "$PR_NUMBER" --json headRefName -q .headRefName)
-   git pull
-   git merge origin/$BASE || {
+   bash .opencode/skills/_shared/scripts/sync-base-branch.sh "$ARGUMENTS" || {
      echo "Merge conflicts detected. Stopping."
      exit 1
    }
@@ -80,12 +71,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
    - Apply the provided fix using `Write` or `Edit`.
     - Format and commit:
       ```bash
-      git add <specific-files>
-      npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-      npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
-      git add $(git diff --cached --name-only) 2>/dev/null || true
-      git commit -m "fix: resolve self-check finding – <description> (#${ARGUMENTS})"
-      git push
+      bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: resolve self-check finding – <description> (#${ARGUMENTS})" <specific-files>
       ```
 
 6. Re-run the four audits. Repeat steps 4–6 until no `must-fix` items remain.

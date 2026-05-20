@@ -52,12 +52,7 @@ After applying fixes, stage and push. **Do not run tests locally.**
 Stage only the files you changed (avoid accidentally staging secrets):
 
 ```bash
-git add <specific-files>
-npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
-git add $(git diff --cached --name-only) 2>/dev/null || true
-git commit -m "fix: resolve CI failure – <what broke>"
-git push
+bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: resolve CI failure – <what broke>" <specific-files>
 ```
 
 ## Step 4 — Confirm CI passes
@@ -76,16 +71,6 @@ Report back: which checks were failing, what was fixed, and whether CI is now gr
 
 ## Post-write hook
 
-After every file write or edit, the `file-hook` plugin runs automatically:
-- `npx prettier --write <file>` — formats the file
-- `npx eslint <file>` — lints the file
-- `npx tsc --noEmit` — type-checks the entire project
+Read `.opencode/skills/_shared/references/post-write-hook.md`.
 
-The hook does **not** block the write — it only logs issues found. When the plugin is unavailable, manually run these checks before committing:
-```bash
-npx prettier --write <file>
-npx eslint <file>
-npx tsc --noEmit
-```
-
-**Git safety**: Never stage or commit files from `.ai-workflows/`, `.opencode/skills/`, or `.opencode/plugins/`. The `git-guard` plugin automatically unstages any such files. Always use `git add <specific-files>`, never `git add .` or `git add -A`.
+Read `.opencode/skills/_shared/references/git-safety.md`.

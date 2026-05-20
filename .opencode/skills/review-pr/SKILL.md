@@ -87,11 +87,6 @@ gh pr edit <pr-number> --add-reviewer phuhl
 
 ## Post-write hook
 
-After every file write or edit, the `file-hook` plugin runs automatically:
-- `npx prettier --write <file>` — formats the file
-- `npx eslint <file>` — lints the file
-- `npx tsc --noEmit` — type-checks the entire project
+Read `.opencode/skills/_shared/references/post-write-hook.md`.
 
-The hook does **not** block the write — it only logs issues found.
-
-**Git safety**: Never stage or commit files from `.ai-workflows/`, `.opencode/skills/`, or `.opencode/plugins/`. The `git-guard` plugin automatically unstages any such files. Always use `git add <specific-files>`, never `git add .` or `git add -A`.
+Read `.opencode/skills/_shared/references/git-safety.md`.

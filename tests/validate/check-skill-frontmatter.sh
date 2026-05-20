@@ -9,6 +9,10 @@ echo "=== Skill frontmatter validation ==="
 
 for skill_dir in "$SKILLS_DIR"/*/; do
   dir_name=$(basename "$skill_dir")
+
+  # Skip non-skill directories (shared resources, etc.)
+  [[ "$dir_name" == _* ]] && continue
+
   skill_file="$skill_dir/SKILL.md"
 
   if [ ! -f "$skill_file" ]; then

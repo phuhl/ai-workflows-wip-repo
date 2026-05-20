@@ -58,14 +58,9 @@ If there is a thumbs-down (`-1` / `THUMBS_DOWN`) reaction from a human user (not
 If no user triage (no thumbs-down, or comment is from a human), proceed to address the comment:
 
 - **Code change requested (suggestion is valid)** — implement the change, then reply to the comment so it is marked as resolved:
-  ```bash
-  git add <specific-files>
-  npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-  npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
-  git add $(git diff --cached --name-only) 2>/dev/null || true
-  git commit -m "fix: address review comment – <description>"
-  git push
-  ```
+   ```bash
+   bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: address review comment – <description>" <specific-files>
+   ```
   Then reply to the comment thread:
   ```bash
   gh api "repos/{owner}/{repo}/pulls/<pr-number>/comments" -f body="Addressed in commit: <description>" -f in_reply_to=<comment_id>

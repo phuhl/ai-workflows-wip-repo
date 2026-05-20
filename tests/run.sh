@@ -74,6 +74,30 @@ else
   echo "  FAILED"
 fi
 
+echo ""
+if bash tests/scripts/test-format-and-commit.sh; then
+  echo "  PASSED"
+else
+  FAILURES=$((FAILURES + 1))
+  echo "  FAILED"
+fi
+
+echo ""
+if bash tests/scripts/test-sync-base-branch.sh; then
+  echo "  PASSED"
+else
+  FAILURES=$((FAILURES + 1))
+  echo "  FAILED"
+fi
+
+echo ""
+if bash tests/scripts/test-check-off-subtask.sh; then
+  echo "  PASSED"
+else
+  FAILURES=$((FAILURES + 1))
+  echo "  FAILED"
+fi
+
 # --- 3. Plugin tests (vitest) ---
 echo ""
 echo "--- 3. Plugin tests ---"

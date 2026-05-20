@@ -35,25 +35,15 @@ Create a branch, push it, open a draft PR, check off "Open draft PR", and immedi
    ```
 
 4. Check off "Open draft PR" in the subtasks comment:
-   - Find the subtasks comment:
-     ```bash
-     gh issue view "$ARGUMENTS" --json comments -q '.comments[] | select(.body | contains("## Subtasks")) | {id,body}'
-     ```
-   - Replace `- [ ] Open draft PR` with `- [x] Open draft PR`.
-   - Update the comment:
-     ```bash
-     gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="${UPDATED_COMMENT_BODY}"
-     ```
+   ```bash
+   bash .opencode/skills/_shared/scripts/check-off-subtask.sh "$ARGUMENTS" "Open draft PR" "$REPO"
+   ```
 
 ### Write stubs and failing tests
 
 5. Merge the latest base branch before working:
    ```bash
-   BASE=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
-   git fetch origin
-   git checkout $(gh pr view "$PR_NUMBER" --json headRefName -q .headRefName)
-   git pull
-   git merge origin/$BASE || {
+   bash .opencode/skills/_shared/scripts/sync-base-branch.sh "$ARGUMENTS" || {
      echo "Merge conflicts detected. Stopping."
      exit 1
    }
@@ -64,12 +54,7 @@ Create a branch, push it, open a draft PR, check off "Open draft PR", and immedi
 
 7. Format and commit:
    ```bash
-   git add <specific-files>
-    npx prettier --write $(git diff --cached --name-only) 2>/dev/null || true
-    npx eslint --fix $(git diff --cached --name-only) 2>/dev/null || true
-    git add $(git diff --cached --name-only) 2>/dev/null || true
-    git commit -m "feat: add stubs and failing tests (#${ARGUMENTS})"
-   git push
+   bash .opencode/skills/_shared/scripts/format-and-commit.sh "feat: add stubs and failing tests (#${ARGUMENTS})" <specific-files>
    ```
 
 8. Check off "Write stubs and failing tests" in the subtasks comment (same comment as step 4).

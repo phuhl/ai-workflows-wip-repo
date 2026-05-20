@@ -9,9 +9,10 @@ Target repos copy wrapper workflow files from `wrappers/` into their own `.githu
 ## Directory ownership
 
 | Directory | Purpose | Edited here? |
-|---|---|---|
+|---|---|---|---|
 | `.github/workflows/` | Reusable workflows (called by target repos via `uses:`) | Yes |
 | `.opencode/skills/` | Shared AI skill definitions (Markdown + YAML frontmatter) | Yes |
+| `.opencode/skills/_shared/` | Shared references and scripts used by multiple skills | Yes |
 | `.opencode/plugins/` | Shared OpenCode plugins (TypeScript, consumed at runtime) | Yes |
 | `scripts/` | Bootstrap and verification shell scripts | Yes |
 | `wrappers/` | Target-repo workflow wrappers (copied, not called directly) | Yes |
@@ -25,13 +26,32 @@ Every skill is a directory under `.opencode/skills/<name>/` containing a `SKILL.
 name: <skill-name>
 description: <one-line>
 allowed-tools: Read, Glob, Grep, Bash, Todowrite
-context: fork          # always fork — each invocation is a fresh process
+context: fork
 agent: general-purpose
 argument-hint: <hint>  # optional
 ---
 ```
 
 Supporting files go in `references/` subdirectories. Skill frontmatter is required.
+
+## Shared infrastructure
+
+Common resources used by multiple skills live under `.opencode/skills/_shared/`. Directories beginning with `_` are not treated as skills by the runtime.
+
+### Shared references (`_shared/references/`)
+
+Skills load these via `Read .opencode/skills/_shared/references/<name>.md` instead of inlining the same content:
+
+- **`post-write-hook.md`** — Post-write formatting behavior (prettier, eslint, tsc).
+- **`git-safety.md`** — Git safety rules (never stage protected directories).
+
+### Shared scripts (`_shared/scripts/`)
+
+Skills invoke these via `bash .opencode/skills/_shared/scripts/<name>.sh`:
+
+- **`format-and-commit.sh`** — Stages files, runs prettier/eslint, commits with the given message, and pushes. Usage: `format-and-commit.sh "<message>" <file...>`. Exit codes: 0=success, 1=usage error.
+- **`sync-base-branch.sh`** — Finds the PR for an issue number, checks out its head branch, and merges the latest base branch. Usage: `sync-base-branch.sh <issue-number>`. Exit codes: 0=success, 1=usage error, 2=no PR found, 3=merge conflict.
+- **`check-off-subtask.sh`** — Finds the "## Subtasks" comment on an issue and checks off a checkbox. Usage: `check-off-subtask.sh <issue-number> "<subtask-text>" [repo]`. Exit codes: 0=success, 1=usage error, 2=no repo, 3=no subtasks comment found.
 
 ## Plugins
 
@@ -101,7 +121,7 @@ npm test                 # or: bash tests/run.sh
 The suite has three layers:
 
 1. **Structural validation** (`tests/validate/`) — Checks skill frontmatter, reference integrity, wrapper→workflow consistency, and YAML syntax across all `.yml` and `SKILL.md` files.
-2. **Shell script tests** (`tests/scripts/`) — Tests `bootstrap-skills.sh`, `verify-bullet-length.sh`, and `verify-no-unresolved-comments.sh` (mocked `gh` CLI via `tests/helpers/mock-gh` with fixture JSON).
+2. **Shell script tests** (`tests/scripts/`) — Tests `bootstrap-skills.sh`, `verify-bullet-length.sh`, `verify-no-unresolved-comments.sh`, `format-and-commit.sh`, `sync-base-branch.sh`, and `check-off-subtask.sh` (mocked `gh` CLI via `tests/helpers/mock-gh` with fixture JSON).
 3. **Plugin unit tests** (`tests/plugins/`) — Vitest tests for `file-hook.ts` and `git-guard.ts` (run from `.opencode/`).
 
 Prerequisites: `vitest` installed in `.opencode/` (already present), Python `yaml` module for YAML validation (`pip install pyyaml` if missing).
@@ -131,6 +151,9 @@ bash tests/validate/check-yaml-syntax.sh
 bash tests/scripts/test-bootstrap-skills.sh
 bash tests/scripts/test-verify-bullet-length.sh
 bash tests/scripts/test-verify-no-unresolved-comments.sh
+bash tests/scripts/test-format-and-commit.sh
+bash tests/scripts/test-sync-base-branch.sh
+bash tests/scripts/test-check-off-subtask.sh
 
 # Run only plugin tests
 cd .opencode && npx vitest run

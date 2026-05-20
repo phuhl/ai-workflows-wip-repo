@@ -11,12 +11,7 @@ Merge base one final time, post an implementation summary as a PR comment (leavi
 
 1. Find the open PR and merge the latest base branch one final time:
    ```bash
-   PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
-   BASE=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
-   git fetch origin
-   git checkout $(gh pr view "$PR_NUMBER" --json headRefName -q .headRefName)
-   git pull
-   git merge origin/$BASE || {
+   bash .opencode/skills/_shared/scripts/sync-base-branch.sh "$ARGUMENTS" || {
      echo "Merge conflicts detected. Stopping."
      exit 1
    }
