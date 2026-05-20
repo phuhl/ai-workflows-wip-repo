@@ -10,11 +10,11 @@ argument-hint: #<number> <prompt>
 You are invoked because someone commented `/oc do <prompt>` on an issue or PR.
 
 ## Inputs
-`$ARGUMENTS` contains the invocation text with the issue/PR number. The user's prompt is in `/tmp/opencode-do-prompt.txt`.
+`$ARGUMENTS` contains the invocation text with the issue/PR number. The user's prompt is in `.opencode/do-prompt.txt`.
 
 ```bash
 NUMBER=$(echo "$ARGUMENTS" | grep -oP '#\K\d+' | head -1)
-PROMPT=$(cat /tmp/opencode-do-prompt.txt 2>/dev/null || echo "$ARGUMENTS")
+PROMPT=$(cat .opencode/do-prompt.txt 2>/dev/null || echo "$ARGUMENTS")
 ```
 
 ## Setup
