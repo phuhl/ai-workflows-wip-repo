@@ -44,7 +44,7 @@ apparts-js/ai-workflows/
 │       ├── opencode-fix-pr.yml
 │       ├── opencode-plan-and-implement.yml
 │       └── opencode-plan.yml
-├── opencode.json              # Example OpenCode config — tells the CLI where skills live
+├── opencode.json              # OpenCode config — auto-created for target repos by bootstrap
 ├── README.md
 └── USER_GUIDE.md              # Tutorial on how to use the automation
 ```
@@ -97,25 +97,6 @@ For repo-specific checklists that override or extend the generic skills, add:
 - `.opencode/skills/verify-tests/references/gotchas.md`
 
 Then remove any duplicated generic skills/workflows from the target repo.
-
-### `opencode.json` configuration
-
-Add a `opencode.json` file to the **root** of your target repo so the OpenCode CLI knows where to find the bootstrapped skills:
-
-```json
-{
-  "skills": {
-    "paths": [".opencode/skills"]
-  },
-  "permission": {
-    "external_directory": {
-      "/tmp/**": "allow"
-    }
-  }
-}
-```
-
-This prevents opencode from reading it's skills from `.claude/skills`.
 
 ## Skill overrides
 
