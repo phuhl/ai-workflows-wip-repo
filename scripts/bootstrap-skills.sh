@@ -64,3 +64,9 @@ if [ -d "$SHARED_PLUGINS_DIR" ] || [ -d "$LOCAL_PLUGINS_DIR" ]; then
 fi
 
 echo "Skills bootstrapped to $OUT_DIR"
+
+# 5. Protect bootstrapped dirs from accidental commits
+echo "*" > "$OUT_DIR/.gitignore"
+if [ -n "${OUT_PLUGINS_DIR:-}" ] && [ -d "$OUT_PLUGINS_DIR" ]; then
+  echo "*" > "$OUT_PLUGINS_DIR/.gitignore"
+fi

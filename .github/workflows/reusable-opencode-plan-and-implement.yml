@@ -46,6 +46,7 @@ jobs:
             --shared-dir .ai-workflows/.opencode/skills \
             --local-dir .opencode/skills \
             --out-dir .opencode/skills
+            echo "*" > .ai-workflows/.gitignore
 
       - name: Configure Git
         run: |

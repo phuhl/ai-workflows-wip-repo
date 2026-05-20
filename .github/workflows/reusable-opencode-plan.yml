@@ -37,6 +37,7 @@ jobs:
             --shared-dir .ai-workflows/.opencode/skills \
             --local-dir .opencode/skills \
             --out-dir .opencode/skills
+            echo "*" > .ai-workflows/.gitignore
 
       - name: Install OpenCode
         run: npm install -g opencode-ai@1.14.24
