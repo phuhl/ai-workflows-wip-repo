@@ -88,12 +88,13 @@ Skills are told: "Do not run tests locally." CI is the source of truth. Push cha
 
 This repo has two validation scripts used during CI:
 - `scripts/verify-bullet-length.sh` — PR summary bullets must be ≤ 200 chars.
-- `scripts/verify-no-unresolved-comments.sh` — All human code-line review comments must have replies before finalizing.
+- `scripts/verify-no-unresolved-comments.sh` — All code-line review comment threads (any author) must have `opencode[bot]` as the last reply before finalizing.
 
 ## Conventions
 
 - **Branch**: `master` (not `main`).
 - **Commit style**: Conventional commits, lowercase prefix (`fix:`, `feat:`, `refactor:`).
+- **Keep AGENTS.md in sync**: Any change that adds, removes, or renames skills, scripts, plugins, workflows, or changes their behavior must update AGENTS.md accordingly.
 - **Actor gating**: All workflows gate on `github.actor == 'phuhl'` (hardcoded, known temporary limitation).
 - **PR stacking**: Issue comments with "stack on #42" or "base on #42" cause `plan-and-implement` to use that PR's branch as the base.
 - **OpenCode config**: `opencode.json` sets `skills.paths` to `[".opencode/skills"]`. Target repos need this too.
