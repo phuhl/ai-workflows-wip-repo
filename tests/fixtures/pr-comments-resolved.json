@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "in_reply_to_id": null,
+    "user": {"login": "reviewer"},
+    "path": "src/foo.ts",
+    "line": 10,
+    "body": "This variable name is unclear, please rename it."
+  },
+  {
+    "id": 2,
+    "in_reply_to_id": 1,
+    "user": {"login": "author"},
+    "path": "src/foo.ts",
+    "line": 10,
+    "body": "Renamed to betterName."
+  },
+  {
+    "id": 3,
+    "in_reply_to_id": 1,
+    "user": {"login": "opencode[bot]"},
+    "path": "src/foo.ts",
+    "line": 10,
+    "body": "Addressed in commit abc123."
+  },
+  {
+    "id": 4,
+    "in_reply_to_id": null,
+    "user": {"login": "reviewer2"},
+    "path": "src/bar.ts",
+    "line": 25,
+    "body": "Missing error handling here."
+  },
+  {
+    "id": 5,
+    "in_reply_to_id": 4,
+    "user": {"login": "opencode[bot]"},
+    "path": "src/bar.ts",
+    "line": 25,
+    "body": "Added try-catch block and pushed."
+  }
+]

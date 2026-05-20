@@ -1,0 +1,18 @@
+[
+  {
+    "id": 100,
+    "in_reply_to_id": null,
+    "user": {"login": "opencode[bot]"},
+    "path": "src/foo.ts",
+    "line": 10,
+    "body": "Consider extracting this into a helper."
+  },
+  {
+    "id": 101,
+    "in_reply_to_id": 100,
+    "user": {"login": "opencode[bot]"},
+    "path": "src/foo.ts",
+    "line": 10,
+    "body": "Updated."
+  }
+]

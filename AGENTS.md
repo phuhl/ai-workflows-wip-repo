@@ -80,15 +80,31 @@ Skills must **never** commit files from `.ai-workflows/`, `.opencode/skills/`, o
 2. The `git-guard` plugin unstages new files in protected directories.
 3. Every skill instructs: always use `git add <specific-files>`, never `git add .` or `git add -A`.
 
-## No local test execution
+## Skill behavior: no local test execution
 
-Skills are told: "Do not run tests locally." CI is the source of truth. Push changes and let CI verify.
+Skills are told: "Do not run tests locally on target repositories." CI is the source of truth. Push changes and let CI verify. This avoids flaky local environments, missing test deps, or timeouts from large test suites.
 
-## Verification scripts (not tests)
+## Verification scripts
 
 This repo has two validation scripts used during CI:
 - `scripts/verify-bullet-length.sh` — PR summary bullets must be ≤ 200 chars.
 - `scripts/verify-no-unresolved-comments.sh` — All code-line review comment threads (any author) must have `opencode[bot]` as the last reply before finalizing.
+
+## Local test suite (this repo only)
+
+Run before pushing changes to catch regressions early:
+
+```bash
+npm test                 # or: bash tests/run.sh
+```
+
+The suite has three layers:
+
+1. **Structural validation** (`tests/validate/`) — Checks skill frontmatter, reference integrity, wrapper→workflow consistency, and YAML syntax across all `.yml` and `SKILL.md` files.
+2. **Shell script tests** (`tests/scripts/`) — Tests `bootstrap-skills.sh`, `verify-bullet-length.sh`, and `verify-no-unresolved-comments.sh` (mocked `gh` CLI via `tests/helpers/mock-gh` with fixture JSON).
+3. **Plugin unit tests** (`tests/plugins/`) — Vitest tests for `file-hook.ts` and `git-guard.ts` (run from `.opencode/`).
+
+Prerequisites: `vitest` installed in `.opencode/` (already present), Python `yaml` module for YAML validation (`pip install pyyaml` if missing).
 
 ## Conventions
 
@@ -101,10 +117,24 @@ This repo has two validation scripts used during CI:
 
 ## Key commands
 
-There are no build/test/lint commands for this repo itself. The only relevant commands:
-
 ```bash
-# Validate a skill or workflow change (manual review — no automated checks)
+# Run all local tests before pushing
+npm test                     # or: bash tests/run.sh
+
+# Run only structural validation
+bash tests/validate/check-skill-frontmatter.sh
+bash tests/validate/check-references.sh
+bash tests/validate/check-wrapper-consistency.sh
+bash tests/validate/check-yaml-syntax.sh
+
+# Run only shell script tests
+bash tests/scripts/test-bootstrap-skills.sh
+bash tests/scripts/test-verify-bullet-length.sh
+bash tests/scripts/test-verify-no-unresolved-comments.sh
+
+# Run only plugin tests
+cd .opencode && npx vitest run
+
 # Verify bullet length for a PR summary
 bash scripts/verify-bullet-length.sh "bullet 1" "bullet 2"
 
