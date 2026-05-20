@@ -134,6 +134,34 @@ describe("file-hook", () => {
     expect(output.output).toBe("File written.");
   });
 
+  it("skips files in .opencode/ and .ai-workflows/ directories", async () => {
+    const { $, client, logs } = setupHook();
+    const hooks = await FileHook({
+      $: $ as any,
+      client: client as any,
+      directory: "/tmp",
+    });
+
+    await hooks["tool.execute.after"]?.(
+      makeInput("write", { filePath: "/home/user/.opencode/plugins/file-hook.ts" }),
+      makeOutput() as any,
+    );
+    await hooks["tool.execute.after"]?.(
+      makeInput("write", { filePath: "/home/user/.opencode/skills/_shared/scripts/post-review-reply.ts" }),
+      makeOutput() as any,
+    );
+    await hooks["tool.execute.after"]?.(
+      makeInput("edit", { filePath: "/tmp/.opencode/foo.ts" }),
+      makeOutput() as any,
+    );
+    await hooks["tool.execute.after"]?.(
+      makeInput("edit", { filePath: "/tmp/.ai-workflows/bar.ts" }),
+      makeOutput() as any,
+    );
+
+    expect(logs).toHaveLength(0);
+  });
+
   it("triggers for .js, .jsx, .mjs, .cjs", async () => {
     const { $, client, logs } = setupHook();
     const hooks = await FileHook({

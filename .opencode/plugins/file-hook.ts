@@ -13,6 +13,12 @@ export const FileHook: Plugin = async ({ $, client, directory }) => {
 
       if (!/\.(tsx?|jsx?|mjs|cjs)$/.test(filePath)) return;
 
+      // Skip bootstrapped infrastructure directories.
+      // Target repos have eslint configs that ignore these, so running tooling
+      // on them produces spurious "file ignored" warnings without benefit.
+      // In this repo, run eslint/prettier directly when working on these files.
+      if (/\.(?:opencode|ai-workflows)\//.test(filePath)) return;
+
       const localBin = join(directory, "node_modules", ".bin");
       const localPrettier = join(localBin, "prettier");
       const localEslint = join(localBin, "eslint");
