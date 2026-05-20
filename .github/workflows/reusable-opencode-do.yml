@@ -53,6 +53,7 @@ jobs:
         run: |
           git config user.name "opencode[bot]"
           git config user.email "opencode[bot]@users.noreply.github.com"
+          echo ".opencode/do-prompt.txt" >> .gitignore
 
       - name: Create progress comment
         id: progress_comment
