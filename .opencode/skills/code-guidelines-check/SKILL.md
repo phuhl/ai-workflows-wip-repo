@@ -12,6 +12,8 @@ description: >
   This skill never posts comments to GitHub; it returns a structured
   report that the caller can act on or pass to review-pr for posting.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
+context: fork
+agent: general-purpose
 argument-hint: [<commit-range> | <file-path> | <pr-number>]
 ---
 
