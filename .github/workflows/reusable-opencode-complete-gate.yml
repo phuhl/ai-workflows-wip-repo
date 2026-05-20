@@ -368,6 +368,9 @@ jobs:
           echo "Relevant conclusions (excluding OpenCode):"
           echo "$CONCLUSIONS"
 
+          TOTAL_CHECKS=$(echo "$CHECK_RUNS_JSON" | jq '.check_runs | length')
+          echo "Total check runs: $TOTAL_CHECKS"
+
           if echo "$CONCLUSIONS" | grep -qE 'failure|cancelled|timed_out|action_required|startup_failure'; then
             echo "Detected failing/cancelled/timed_out/action_required/startup_failure conclusion."
             echo "status=failing" >> "$GITHUB_OUTPUT"
@@ -386,8 +389,13 @@ jobs:
               ERROR_MSG=$(echo "$REQUIRED_JSON" | jq -r '.message')
               echo "Branch protection API returned: ${ERROR_MSG}"
               echo "The app token likely needs administration:read permission on ${REPO}."
-              echo "Falling back to check-run-based result — CI may miss checks not yet reported."
-              echo "status=passing" >> "$GITHUB_OUTPUT"
+              if [ "$TOTAL_CHECKS" -eq 0 ]; then
+                echo "No check runs reported. Cannot verify CI health. Treating as failing."
+                echo "status=failing" >> "$GITHUB_OUTPUT"
+              else
+                echo "Falling back to check-run-based result — CI may miss checks not yet reported."
+                echo "status=passing" >> "$GITHUB_OUTPUT"
+              fi
             elif echo "$REQUIRED_JSON" | jq -e '.contexts' >/dev/null 2>&1; then
               echo "Required contexts:"
               echo "$REQUIRED_JSON" | jq -r '.contexts[]'
@@ -422,8 +430,13 @@ jobs:
               fi
             else
               echo "Branch protection API returned an unexpected response or no contexts configured."
-              echo "Falling back to check-run-based result."
-              echo "status=passing" >> "$GITHUB_OUTPUT"
+              if [ "$TOTAL_CHECKS" -eq 0 ]; then
+                echo "No check runs reported. Cannot verify CI health. Treating as failing."
+                echo "status=failing" >> "$GITHUB_OUTPUT"
+              else
+                echo "Falling back to check-run-based result."
+                echo "status=passing" >> "$GITHUB_OUTPUT"
+              fi
             fi
           fi
 
