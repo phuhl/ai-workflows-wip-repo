@@ -55,6 +55,12 @@ Skills invoke these via `npx tsx .opencode/skills/_shared/scripts/<name>.ts`:
 - **`check-off-subtask.ts`** — Finds the "## Subtasks" comment on an issue and checks off a checkbox. Usage: `check-off-subtask.ts <issue-number> "<subtask-text>" [repo]`. Exit codes: 0=success, 1=usage error, 2=no repo, 3=no subtasks comment found.
 - **`post-review-reply.ts`** — Posts a reply to an existing code-line review comment thread using properly-typed JSON (in_reply_to as integer). Usage: `post-review-reply.ts <pr-number> <comment-id> "<body>"`. Exit codes: 0=success, 1=usage error.
 
+## Skill reference files (per-repo customization)
+
+Some skills reference files like `references/checklist.md`, `references/coverage-map.md`, or `references/gotchas.md`. These reference files are **deliberately not included** in the shared repo — they are placeholders for target repos to customize. When a skill references a file that doesn't exist, the skill falls back to generic behavior. Target repos can add these files under their local `.opencode/skills/<skill-name>/references/` to provide repo-specific guidance. The bootstrap script overlays local files on top of shared ones, so local reference files take precedence.
+
+Having these reference files is **optional but recommended** — they improve skill performance by providing repo-specific context (e.g., coding conventions, known patterns, test gotchas) that the AI can use directly rather than having to infer from codebase exploration.
+
 ## Plugins
 
 Two TypeScript plugins in `.opencode/plugins/`, consumed by the OpenCode CLI runtime via `@opencode-ai/plugin@1.14.24` (the only dependency, defined in `.opencode/package.json`):

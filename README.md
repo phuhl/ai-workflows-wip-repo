@@ -89,14 +89,15 @@ Each wrapper declares only the permissions that specific workflow needs.
 > ```
 > You **must** change `"Run API Tests"` to the name of your repository's **longest-running required status check**. The gate uses this trigger to know when to evaluate CI results. If you listen to a short workflow, the gate may run before other checks finish, causing concurrent or premature execution. If you do not have a suitable workflow or prefer not to use `workflow_run`, you can remove it — the gate will still work via the `pull_request: labeled` trigger (when the `auto-review` label is added).
 
-### Optional local skill references
+### Optional local skill references (recommended for better performance)
 
-For repo-specific checklists that override or extend the generic skills, add:
-- `.opencode/skills/code-review/references/checklist.md`
-- `.opencode/skills/verify-tests/references/coverage-map.md`
-- `.opencode/skills/verify-tests/references/gotchas.md`
+Some skills reference customization files that are deliberately not included in this repo. Target repos can add these to give the AI repo-specific guidance instead of making it infer conventions from codebase exploration:
 
-Then remove any duplicated generic skills/workflows from the target repo.
+- `.opencode/skills/code-review/references/checklist.md` — Repo-specific review checklist
+- `.opencode/skills/verify-tests/references/coverage-map.md` — Test coverage expectations
+- `.opencode/skills/verify-tests/references/gotchas.md` — Common testing gotchas
+
+All are **optional**. If a file doesn't exist, the skill falls back to generic behavior.
 
 ## Skill overrides
 
