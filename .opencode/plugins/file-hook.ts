@@ -1,4 +1,6 @@
 import type { Plugin } from "@opencode-ai/plugin"
+import { existsSync } from "node:fs"
+import { join } from "node:path"
 
 export const FileHook: Plugin = async ({ $, client, directory }) => {
   return {
@@ -11,11 +13,18 @@ export const FileHook: Plugin = async ({ $, client, directory }) => {
 
       if (!/\.(tsx?|jsx?|mjs|cjs)$/.test(filePath)) return
 
+      const localBin = join(directory, "node_modules", ".bin")
+      const localPrettier = join(localBin, "prettier")
+      const localEslint = join(localBin, "eslint")
+      const localTsc = join(localBin, "tsc")
+
       const issues: string[] = []
 
-      // 1. Prettier — format the file
+      // 1. Prettier — format the file (use local binary if installed)
       try {
-        const pretty = await $`npx prettier --write ${filePath} 2>&1`.nothrow()
+        const pretty = existsSync(localPrettier)
+          ? await $`${localPrettier} --write ${filePath} 2>&1`.nothrow()
+          : await $`npx prettier --write ${filePath} 2>&1`.nothrow()
         if (pretty.exitCode !== 0) {
           issues.push(
             `[prettier] ${(pretty.stderr || pretty.stdout)
@@ -27,9 +36,11 @@ export const FileHook: Plugin = async ({ $, client, directory }) => {
         // prettier unavailable — skip
       }
 
-      // 2. ESLint — lint the file
+      // 2. ESLint — lint the file (use local binary if installed)
       try {
-        const lint = await $`npx eslint ${filePath} 2>&1`.nothrow()
+        const lint = existsSync(localEslint)
+          ? await $`${localEslint} ${filePath} 2>&1`.nothrow()
+          : await $`npx eslint ${filePath} 2>&1`.nothrow()
         if (lint.exitCode !== 0) {
           issues.push(
             `[eslint] ${(lint.stderr || lint.stdout)
@@ -41,9 +52,11 @@ export const FileHook: Plugin = async ({ $, client, directory }) => {
         // eslint unavailable — skip
       }
 
-      // 3. tsc — type-check the whole project
+      // 3. tsc — type-check the whole project (use local binary if installed)
       try {
-        const tsc = await $`npx tsc --noEmit 2>&1`.nothrow()
+        const tsc = existsSync(localTsc)
+          ? await $`${localTsc} --noEmit 2>&1`.nothrow()
+          : await $`npx tsc --noEmit 2>&1`.nothrow()
         if (tsc.exitCode !== 0) {
           const lines = (tsc.stderr || tsc.stdout).toString().split("\n")
           const errors = lines

@@ -49,6 +49,15 @@ jobs:
             --out-dir .opencode/skills
             echo "*" > .ai-workflows/.gitignore
 
+      - name: Install target repo dependencies
+        if: hashFiles('package.json') != ''
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+
       - name: Configure Git
         run: |
           git config user.name "opencode[bot]"

@@ -54,6 +54,15 @@ jobs:
             --out-dir .opencode/skills
             echo "*" > .ai-workflows/.gitignore
 
+      - name: Install target repo dependencies
+        if: hashFiles('package.json') != ''
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+
       - name: Ensure labels exist
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}
