@@ -37,13 +37,34 @@ function fetchComments(prNumber: number, repo: string): Comment[] | null {
   }
 }
 
-export function verifyComments(prNumber: number, repo: string): VerifyResult {
+function detectBotUser(): string {
+  try {
+    const raw = execSync("gh api /user -q '.login'", {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "ignore"],
+    });
+    const user = raw.trim();
+    if (!user || user === "null") return "opencode[bot]";
+    return user;
+  } catch {
+    return "opencode[bot]";
+  }
+}
+
+export function verifyComments(
+  prNumber: number,
+  repo: string,
+  botUser?: string,
+): VerifyResult {
   const lines: string[] = [];
   const unresolved: UnresolvedResult[] = [];
+
+  const effectiveBotUser = botUser || detectBotUser();
 
   lines.push(
     `=== Checking unresolved code-line review comments on PR #${prNumber} in ${repo} ===`,
   );
+  lines.push(`Bot user for resolution check: ${effectiveBotUser}`);
 
   const allComments = fetchComments(prNumber, repo);
 
@@ -66,7 +87,7 @@ export function verifyComments(prNumber: number, repo: string): VerifyResult {
 
     const lastReply = replies.length > 0 ? replies[replies.length - 1] : null;
 
-    if (!lastReply || lastReply.user.login !== "opencode[bot]") {
+    if (!lastReply || lastReply.user.login !== effectiveBotUser) {
       const lineInfo = `${starter.id}  file=${starter.path}:${starter.line ?? "?"}`;
       const bodyPreview = starter.body.slice(0, 120);
 
@@ -95,13 +116,13 @@ export function verifyComments(prNumber: number, repo: string): VerifyResult {
   }
 
   lines.push(
-    "All code-line review comments have been addressed (last reply is from opencode[bot]).",
+    "All code-line review comments have been addressed (last reply is from the bot).",
   );
   return { ok: true, exitCode: 0, output: lines.join("\n"), unresolved };
 }
 
 function main(): void {
-  const [prNumArg, repoArg] = process.argv.slice(2);
+  const [prNumArg, repoArg, botUserArg] = process.argv.slice(2);
 
   let repo = repoArg;
   if (!repo) {
@@ -120,7 +141,7 @@ function main(): void {
   }
 
   if (!prNumArg) {
-    console.log("Usage: <script> <pr-number> [repo]");
+    console.log("Usage: <script> <pr-number> [repo] [bot-user]");
     process.exit(2);
   }
 
@@ -132,7 +153,7 @@ function main(): void {
   }
 
   const prNumber = parseInt(prNumArg, 10);
-  const result = verifyComments(prNumber, repo);
+  const result = verifyComments(prNumber, repo, botUserArg || undefined);
   console.log(result.output);
   process.exit(result.exitCode);
 }

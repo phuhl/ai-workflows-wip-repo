@@ -1,7 +1,7 @@
 ---
 name: plan-and-implement
 description: Plan, subdivide, and implement a GitHub issue end-to-end. Triggered when an issue is labeled 'opencode'. Creates subtasks, opens a branch and draft PR, merges base regularly, handles merge conflicts, implements with TDD, pushes regularly, self-checks with the same audits used in code review, and marks the PR complete when finished.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Task
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Task, Skill
 context: fork
 agent: general-purpose
 argument-hint: <issue-number>
@@ -42,6 +42,14 @@ You are invoked to drive an issue labeled `opencode` to completion.
      PR_REVIEW_COMMENTS=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --jq '.[] | {id, path, line, body, in_reply_to_id, user: .user.login}' 2>/dev/null || echo "")
    fi
    ```
+
+## Context summary
+
+Before proceeding, launch a subagent to distill the issue, comments, PR, and review feedback into a compact summary. This prevents the main context from being cluttered with raw comments and surfaces gotchas that earlier attempts may have hit.
+
+1. Read `.opencode/skills/_shared/references/context-summary.md`.
+2. Follow Step 1 (determine parameters) and Step 2 (launch the Task subagent). Use `$ARGUMENTS` for the issue number. If `$PR_NUMBER` was set in Setup, pass it; otherwise pass "no PR yet".
+3. After the subagent returns, note the key gotchas to the user in 1–2 lines, then proceed to State detection.
 
 ## State detection
 

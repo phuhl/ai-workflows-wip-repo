@@ -1,7 +1,7 @@
 ---
 name: fix-pr
 description: Fix a PR that has failing CI or unresolved review comments. Checks out the branch, merges base, handles merge conflicts, diagnoses, applies fixes, commits, and pushes. The calling workflow manages the 'auto-review' label.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Skill
 context: fork
 agent: general-purpose
 argument-hint: <pr-number> [ci-failing|review-comments]
@@ -42,11 +42,28 @@ Parse `$ARGUMENTS` as: `<pr-number> <context>` where context is `ci-failing` or 
    ```
    The branch is now up-to-date with the base. Proceed to "Check implementation completeness".
 
+## Context summary
+
+Before fixing anything, launch a subagent to distill the issue, comments, PR, and review feedback into a compact summary.
+
+1. Find the associated issue number:
+   ```bash
+   ISSUE_NUM=$(gh pr view <pr-number> --json headRefName -q '.headRefName' | grep -oE '^[0-9]+' || true)
+
+   if [ -z "$ISSUE_NUM" ]; then
+     ISSUE_NUM=$(gh pr view <pr-number> --json body -q '.body' | grep -oEi '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)[[:space:]]*#[0-9]+' | grep -oE '[0-9]+' | head -1)
+   fi
+   ```
+
+2. Read `.opencode/skills/_shared/references/context-summary.md`.
+3. Follow Step 1 and Step 2. Use `<pr-number>` (from `$ARGUMENTS`) for the PR number, `$ISSUE_NUM` for the issue (pass "no issue found" if empty), and determine the repo slug. The subagent will independently fetch all comments and return a concise summary.
+4. After the subagent returns, note key gotchas to the user in 1–2 lines, then proceed.
+
 ## Check implementation completeness
 
 Before attempting any fix, determine whether the implementation is actually finished.
 
-1. Find the associated issue:
+1. If `$ISSUE_NUM` is not already set, find the associated issue:
    ```bash
    ISSUE_NUM=$(gh pr view <pr-number> --json headRefName -q '.headRefName' | grep -oE '^[0-9]+' || true)
 

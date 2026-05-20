@@ -44,6 +44,7 @@ Skills load these via `Read .opencode/skills/_shared/references/<name>.md` inste
 
 - **`post-write-hook.md`** — Post-write formatting behavior (prettier, eslint, tsc).
 - **`git-safety.md`** — Git safety rules (never stage protected directories).
+- **`context-summary.md`** — Launches a subagent (via Task tool) to independently read issue body, issue comments, PR body, PR comments, and review comments, then returns a concise structured summary highlighting gotchas, past decisions, and unresolved feedback. Used by implement skills (`plan-and-implement`, `fix-pr`, `resolve-pr-conflicts`) before making any code changes.
 
 ### Shared scripts (`_shared/scripts/`)
 
@@ -52,6 +53,7 @@ Skills invoke these via `npx tsx .opencode/skills/_shared/scripts/<name>.ts`:
 - **`format-and-commit.ts`** — Stages files, runs prettier/eslint, commits with the given message, and pushes. Usage: `format-and-commit.ts "<message>" <file...>`. Exit codes: 0=success, 1=usage error.
 - **`sync-base-branch.ts`** — Finds the PR for an issue number, checks out its head branch, and merges the latest base branch. Usage: `sync-base-branch.ts <issue-number>`. Exit codes: 0=success, 1=usage error, 2=no PR found, 3=merge conflict.
 - **`check-off-subtask.ts`** — Finds the "## Subtasks" comment on an issue and checks off a checkbox. Usage: `check-off-subtask.ts <issue-number> "<subtask-text>" [repo]`. Exit codes: 0=success, 1=usage error, 2=no repo, 3=no subtasks comment found.
+- **`post-review-reply.ts`** — Posts a reply to an existing code-line review comment thread using properly-typed JSON (in_reply_to as integer). Usage: `post-review-reply.ts <pr-number> <comment-id> "<body>"`. Exit codes: 0=success, 1=usage error.
 
 ## Plugins
 
@@ -108,7 +110,7 @@ Skills are told: "Do not run tests locally on target repositories." CI is the so
 
 This repo has two validation scripts used during CI:
 - `scripts/verify-bullet-length.ts` — PR summary bullets must be ≤ 200 chars.
-- `scripts/verify-no-unresolved-comments.ts` — All code-line review comment threads (any author) must have `opencode[bot]` as the last reply before finalizing.
+- `scripts/verify-no-unresolved-comments.ts` — All code-line review comment threads (any author) must have the bot as the last reply before finalizing. The bot username is auto-detected via `gh api /user` (fallback: `opencode[bot]`).
 
 ## Local test suite (this repo only)
 
