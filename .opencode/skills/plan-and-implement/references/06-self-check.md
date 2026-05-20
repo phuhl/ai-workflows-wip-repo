@@ -66,18 +66,18 @@ Before running audits, ensure every code-line review comment on this PR is handl
    ```
    Save each skill's output to a temp file immediately as they return. Do not run them sequentially — they are independent and should execute in parallel.
 
-4. Parse the **Actionable findings** sections for `**severity:** must-fix`.
+4. Parse the **Actionable findings** sections for `**severity:** must-fix` and `**severity:** should-fix`.
 
-5. For each `must-fix` finding:
+5. For each `must-fix` or `should-fix` finding:
    - Apply the provided fix using `Write` or `Edit`.
     - Format and commit:
       ```bash
       bash .opencode/skills/_shared/scripts/format-and-commit.sh "fix: resolve self-check finding – <description> (#${ARGUMENTS})" <specific-files>
       ```
 
-6. Re-run the four audits. Repeat steps 4–6 until no `must-fix` items remain.
+6. Re-run the four audits. Repeat steps 4–6 until no `must-fix` or `should-fix` items remain.
 
-7. If `should-fix` or `note` items remain that you cannot address quickly, leave them for the human reviewer; do not block finalization on them.
+7. Also fix any `should-fix` findings that can be addressed with straightforward edits. If a `should-fix` item requires significant refactoring or has unclear trade-offs, you may defer it. `note` items may be left for the human reviewer; do not block finalization on them.
 
 8. Check off "Fix issues found in audit" in the subtasks comment.
 
