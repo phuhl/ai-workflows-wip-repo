@@ -33,23 +33,25 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
      ```
      If the script reports unresolved comments, repeat until clean, then check off this todo item.
 
-3. For each unchecked subtask up to "Fix issues found in audit":
-     a. Do the work (implement logic, refactor, write docs).
-     b. Format and commit:
+3. **Re-read the subtasks comment** and use its sub-items as the implementation guide. The planning phase added task-specific sub-items under each mandatory checkbox that describe exactly what to build. Work through each sub-item systematically. Each sub-item should correspond to one committable change.
+
+4. For each unchecked mandatory subtask up to "Fix issues found in audit":
+     a. For each sub-item under this mandatory checkbox (in order), do the work described.
+     b. Format and commit after completing one or more sub-items:
         ```bash
         npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "feat: <description> (#${ARGUMENTS})" <specific-files>
         ```
-     c. Post a PR comment describing what was done in this commit:
+     c. Post a PR comment describing what was done:
         ```bash
         gh pr comment "$PR_NUMBER" --body "$(printf '%b' "**<subtask>**: <description of what changed and why>\n\nCommit: $(git rev-parse --short HEAD)")"
         ```
-     d. Check off the subtask in the subtasks comment:
+     d. When all sub-items under a mandatory checkbox are complete, check off the parent checkbox:
         ```bash
         npx tsx .opencode/skills/_shared/scripts/check-off-subtask.ts "$ARGUMENTS" "<exact text>" "$REPO"
         ```
 
-4. **Ensure all subtasks up to "Fix issues found in audit" are checked.** The gate will retrigger this skill if any checkbox remains unchecked. Fetch the current subtasks comment and for any still-unchecked subtask among "Implement logic to pass tests" and "Update docs / README if needed":
-   - If the subtask was intentionally completed in step 3, check it with:
+5. **Ensure all mandatory subtasks up to "Fix issues found in audit" are checked.** The gate will retrigger this skill if any checkbox remains unchecked. Fetch the current subtasks comment and for any still-unchecked mandatory subtask ("Implement logic to pass tests" and "Update docs / README if needed"):
+   - If the subtask was intentionally completed in step 4, check it with:
      ```bash
      npx tsx .opencode/skills/_shared/scripts/check-off-subtask.ts "$ARGUMENTS" "<text>" "$REPO"
      ```
@@ -57,4 +59,4 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
 
    The final set of checked subtasks must include no remaining `- [ ]` items before "Fix issues found in audit".
 
-5. Load `references/06-self-check.md` and continue in this session.
+6. Load `references/06-self-check.md` and continue in this session.
