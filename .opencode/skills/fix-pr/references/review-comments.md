@@ -107,3 +107,18 @@ Base your action on the **most recent human reply in the thread**, not just the 
 gh pr comment <pr-number> --body "All review comments addressed. Changes made:
 - <bullet list of what was done>"
 ```
+
+### 6. Run self-check audits
+
+After all comments are addressed and the summary is posted, run self-check audits on the full PR diff:
+
+```bash
+PR_NUMBER=<pr-number>
+BASE=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
+git fetch origin "$BASE"
+MERGE_BASE=$(git merge-base "origin/$BASE" HEAD)
+RANGE="${MERGE_BASE}..HEAD"
+REF="#${PR_NUMBER}"
+```
+
+Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.

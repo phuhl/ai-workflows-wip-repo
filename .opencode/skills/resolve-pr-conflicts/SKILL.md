@@ -1,7 +1,7 @@
 ---
 name: resolve-pr-conflicts
 description: Resolve merge conflicts on a pull request by rebasing onto its base branch, fixing each conflict thoughtfully, verifying tests pass, and force-pushing. Use when a PR shows merge conflicts, "branch is out of date", "conflicts need resolving", "can't merge due to conflicts".
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Task
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Task, Skill
 context: fork
 agent: general-purpose
 argument-hint: [pr-number]
@@ -104,6 +104,21 @@ gh pr checks <pr-number> --watch
 ```
 
 Report back: which files had conflicts, how they were resolved, and current CI status.
+
+## Step 5 — Run self-check audits
+
+After the PR is mergeable, run self-check audits on the full PR diff:
+
+```bash
+PR_NUMBER=<pr-number>
+BASE=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
+git fetch origin "$BASE"
+MERGE_BASE=$(git merge-base "origin/$BASE" HEAD)
+RANGE="${MERGE_BASE}..HEAD"
+REF="#${PR_NUMBER}"
+```
+
+Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
 
 ## Post-write hook
 

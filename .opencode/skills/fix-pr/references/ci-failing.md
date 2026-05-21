@@ -24,3 +24,14 @@ Read the failed CI logs, understand the error, fix the root cause, and push.
    ```
    Skill("fix-pr-ci", args="<pr-number>")
    ```
+
+5. Run self-check audits on the full PR diff:
+   ```bash
+   PR_NUMBER=<pr-number>
+   BASE=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
+   git fetch origin "$BASE"
+   MERGE_BASE=$(git merge-base "origin/$BASE" HEAD)
+   RANGE="${MERGE_BASE}..HEAD"
+   REF="#${PR_NUMBER}"
+   ```
+   Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.

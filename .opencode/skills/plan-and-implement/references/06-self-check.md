@@ -50,35 +50,16 @@ Before running audits, ensure every code-line review comment on this PR is handl
    ```
    If merge conflicts occur, invoke `resolve-pr-conflicts` and stop.
 
-2. Determine the diff range:
+2. Set variables for the shared self-check:
    ```bash
    BASE=$(git merge-base origin/master HEAD)
    RANGE="${BASE}..HEAD"
+   REF="#${ARGUMENTS}"
    ```
 
-3. Run the four audit skills **in parallel** and capture their outputs:
-   Launch all four at the same time using the Skill tool:
-   ```
-   Skill("code-review", args=RANGE)
-   Skill("verify-tests", args=RANGE)
-   Skill("code-guidelines-check", args=RANGE)
-   Skill("deduplication-check", args=RANGE)
-   ```
-   Save each skill's output to a temp file immediately as they return. Do not run them sequentially — they are independent and should execute in parallel.
+3. Run self-check audits:
+   Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
 
-4. Parse the **Actionable findings** sections for `**severity:** must-fix` and `**severity:** should-fix`.
+4. Check off "Fix issues found in audit" in the subtasks comment.
 
-5. For each `must-fix` or `should-fix` finding:
-   - Apply the provided fix using `Write` or `Edit`.
-    - Format and commit:
-      ```bash
-      npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: resolve self-check finding – <description> (#${ARGUMENTS})" <specific-files>
-      ```
-
-6. Re-run the four audits. Repeat steps 4–6 until no `must-fix` or `should-fix` items remain.
-
-7. Also fix any `should-fix` findings that can be addressed with straightforward edits. If a `should-fix` item requires significant refactoring or has unclear trade-offs, you may defer it. `note` items may be left for the human reviewer; do not block finalization on them.
-
-8. Check off "Fix issues found in audit" in the subtasks comment.
-
-9. Load `references/07-finalize.md` and continue in this session.
+5. Load `references/07-finalize.md` and continue in this session.
