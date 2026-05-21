@@ -45,6 +45,7 @@ Skills load these via `Read .opencode/skills/_shared/references/<name>.md` inste
 - **`post-write-hook.md`** — Post-write formatting behavior (prettier, eslint, tsc).
 - **`git-safety.md`** — Git safety rules (never stage protected directories).
 - **`context-summary.md`** — Launches a subagent (via Task tool) to independently read issue body, issue comments, PR body, PR comments, and review comments, then returns a concise structured summary highlighting gotchas, past decisions, and unresolved feedback. Used by implement skills (`plan-and-implement`, `fix-pr`, `resolve-pr-conflicts`) before making any code changes.
+- **`self-check.md`** — Runs the four audit skills (`code-review`, `verify-tests`, `code-guidelines-check`, `deduplication-check`) in parallel on a diff range, then iteratively fixes all `must-fix` and `should-fix` findings. Used by every code-changing skill (`plan-and-implement`, `fix-pr`, `fix-pr-ci`, `resolve-pr-conflicts`, `user-do`) after making changes, to validate the full PR before considering work done.
 
 ### Shared scripts (`_shared/scripts/`)
 
@@ -139,6 +140,7 @@ Prerequisites: `vitest` and `tsx` installed (run `npm install`).
 - **Branch**: `master` (not `main`).
 - **Commit style**: Conventional commits, lowercase prefix (`fix:`, `feat:`, `refactor:`).
 - **Keep AGENTS.md in sync**: Any change that adds, removes, or renames skills, scripts, plugins, workflows, or changes their behavior must update AGENTS.md accordingly.
+- **Keep docs in sync**: Any change that adds, removes, or renames a `/oc` command, workflow trigger, or user-facing behavior must update `README.md` and `USER_GUIDE.md` to reflect it.
 - **Actor gating**: All workflows gate on `github.actor == 'phuhl'` (hardcoded, known temporary limitation).
 - **PR stacking**: Issue comments with "stack on #42" or "base on #42" cause `plan-and-implement` to use that PR's branch as the base.
 - **OpenCode config**: `opencode.json` sets `skills.paths` to `[".opencode/skills"]` and allows `/tmp/**` via `external_directory` permission. Target repos need this too.

@@ -1,7 +1,7 @@
 ---
 name: user-do
 description: Execute an arbitrary user prompt on an issue or PR. Triggered by '/oc do <prompt>'.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Skill
 context: fork
 agent: general-purpose
 argument-hint: #<number> <prompt>
@@ -41,6 +41,24 @@ PROMPT=$(cat .opencode/do-prompt.txt 2>/dev/null || echo "$ARGUMENTS")
    npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "<descriptive message>" <specific-files>
    ```
 5. **After finishing**, post a brief comment summarizing what was done.
+
+6. **Run self-check audits** on the changes you made:
+
+   Determine the diff range — if on a PR branch, use the full PR diff; otherwise use the changes from this session:
+   ```bash
+   PR_NUMBER=$(gh pr view --json number -q .number 2>/dev/null || echo "")
+   if [ -n "$PR_NUMBER" ]; then
+     BASE=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
+     git fetch origin "$BASE"
+     MERGE_BASE=$(git merge-base "origin/$BASE" HEAD)
+     RANGE="${MERGE_BASE}..HEAD"
+     REF="#${PR_NUMBER}"
+   else
+     RANGE="HEAD~1..HEAD"
+     REF="do"
+   fi
+   ```
+   Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
 
 ## Post-write hook
 

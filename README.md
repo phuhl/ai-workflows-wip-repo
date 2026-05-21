@@ -6,6 +6,21 @@ Shared OpenCode skills and reusable GitHub Actions workflows for repositories ow
 
 This repository centralizes all repository-generic AI automation so individual repos don't have to duplicate skills and workflows. Repo-specific overrides remain possible via local files.
 
+## Commands
+
+Post these as a comment on a pull request or issue (gated to `phuhl`). Each also works with `/opencode` prefix.
+
+| Command | What it does |
+|---|---|
+| `/oc plan` | Reads an issue and posts a structured implementation plan with risk analysis |
+| `/oc code-review` | Runs automated code review (correctness, tests, guidelines) and posts findings as inline comments |
+| `/oc fix-pr` | Fixes failing CI checks on the PR (reads logs, fixes root cause, pushes) |
+| `/oc address-review` | Addresses all unresolved code-line review comments (fixes code or replies with explanations) |
+| `/oc complete-gate` | Manually triggers the complete-gate evaluation (CI monitoring + review) |
+| `/oc do <prompt>` | Executes an arbitrary prompt on an issue or PR |
+
+See [`USER_GUIDE.md`](USER_GUIDE.md) for the full lifecycle walkthrough.
+
 ## Structure
 
 ```

@@ -1,7 +1,7 @@
 ---
 name: fix-pr-ci
 description: Diagnose and fix failing CI checks on a pull request. Reads logs, fixes test/lint/build failures, re-triggers flaky runs, and confirms green. Use when CI is red on a PR, "fix the failing checks", "CI is broken", "tests are failing in the PR".
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Skill
 context: fork
 agent: general-purpose
 argument-hint: [pr-number]
@@ -70,6 +70,21 @@ gh pr ready <pr-number>
 ```
 
 Report back: which checks were failing, what was fixed, and whether CI is now green.
+
+## Step 5 — Run self-check audits
+
+After CI is green, run self-check audits on the full PR diff:
+
+```bash
+PR_NUMBER=<pr-number>
+BASE=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
+git fetch origin "$BASE"
+MERGE_BASE=$(git merge-base "origin/$BASE" HEAD)
+RANGE="${MERGE_BASE}..HEAD"
+REF="#${PR_NUMBER}"
+```
+
+Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
 
 ## Post-write hook
 
