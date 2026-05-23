@@ -2,6 +2,15 @@ name: OpenCode — Complete Gate
 
 on:
   workflow_call:
+    inputs:
+      ALLOWED_ACTORS:
+        type: string
+        default: 'phuhl'
+        required: false
+      BYPASS_ACTOR_CHECK:
+        type: boolean
+        default: false
+        required: false
     secrets:
       OPENCODE_API_KEY:
         required: true

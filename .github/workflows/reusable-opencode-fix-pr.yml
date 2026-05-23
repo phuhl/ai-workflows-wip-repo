@@ -2,6 +2,15 @@ name: OpenCode — Fix PR (manual)
 
 on:
   workflow_call:
+    inputs:
+      ALLOWED_ACTORS:
+        type: string
+        default: 'phuhl'
+        required: false
+      BYPASS_ACTOR_CHECK:
+        type: boolean
+        default: false
+        required: false
     secrets:
       OPENCODE_API_KEY:
         required: true
@@ -13,11 +22,11 @@ on:
 jobs:
   opencode-fix-pr:
     if: |
-      (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
       (github.event_name == 'issue_comment' &&
        github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc fix-pr') || contains(github.event.comment.body, '/opencode fix-pr')) &&
-       github.actor == 'phuhl')
+       (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write

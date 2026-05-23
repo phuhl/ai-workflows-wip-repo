@@ -2,6 +2,15 @@ name: OpenCode — Plan and Implement
 
 on:
   workflow_call:
+    inputs:
+      ALLOWED_ACTORS:
+        type: string
+        default: 'phuhl'
+        required: false
+      BYPASS_ACTOR_CHECK:
+        type: boolean
+        default: false
+        required: false
     secrets:
       OPENCODE_API_KEY:
         required: true
@@ -13,8 +22,8 @@ on:
 jobs:
   opencode-plan-and-implement:
     if: |
-      (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
-      (github.event_name == 'issues' && github.event.label.name == 'opencode' && github.actor == 'phuhl')
+      (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
+      (github.event_name == 'issues' && github.event.label.name == 'opencode' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     runs-on: ubuntu-latest
     permissions:
       issues: write

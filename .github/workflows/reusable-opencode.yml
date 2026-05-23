@@ -2,6 +2,15 @@ name: OpenCode Dispatcher
 
 on:
   workflow_call:
+    inputs:
+      ALLOWED_ACTORS:
+        type: string
+        default: 'phuhl'
+        required: false
+      BYPASS_ACTOR_CHECK:
+        type: boolean
+        default: false
+        required: false
     secrets:
       OPENCODE_API_KEY:
         required: true
@@ -18,8 +27,8 @@ jobs:
       !(contains(github.event.comment.body, '/oc complete-gate') || contains(github.event.comment.body, '/opencode complete-gate')) &&
       !(contains(github.event.comment.body, '/oc plan') || contains(github.event.comment.body, '/opencode plan')) &&
       !(contains(github.event.comment.body, '/oc address-review') || contains(github.event.comment.body, '/opencode address-review')) &&
-      !(contains(github.event.comment.body, '/oc do') || contains(github.event.comment.body, '/opencode do')) &&
-       github.actor == 'phuhl'
+       !(contains(github.event.comment.body, '/oc do') || contains(github.event.comment.body, '/opencode do')) &&
+       (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))
     runs-on: ubuntu-latest
     permissions:
       id-token: write

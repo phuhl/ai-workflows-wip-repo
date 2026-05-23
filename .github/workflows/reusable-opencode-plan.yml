@@ -2,6 +2,15 @@ name: OpenCode — Plan
 
 on:
   workflow_call:
+    inputs:
+      ALLOWED_ACTORS:
+        type: string
+        default: 'phuhl'
+        required: false
+      BYPASS_ACTOR_CHECK:
+        type: boolean
+        default: false
+        required: false
     secrets:
       OPENCODE_API_KEY:
         required: true
@@ -9,11 +18,11 @@ on:
 jobs:
   opencode-plan:
     if: |
-      (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
       (github.event_name == 'issue_comment' &&
        !github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc plan') || contains(github.event.comment.body, '/opencode plan')) &&
-       github.actor == 'phuhl')
+       (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     runs-on: ubuntu-latest
     permissions:
       issues: write

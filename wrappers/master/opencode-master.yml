@@ -35,4 +35,10 @@ jobs:
       issues: write
       checks: read
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-master.yml@master
-    secrets: inherit
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+    with:
+      ALLOWED_ACTORS: ${{ vars.ALLOWED_ACTORS || 'phuhl' }}
+      BYPASS_ACTOR_CHECK: ${{ vars.BYPASS_ACTOR_CHECK || github.event.repository.private }}
