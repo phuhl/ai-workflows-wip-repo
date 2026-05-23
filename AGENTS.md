@@ -77,7 +77,7 @@ The bootstrap script copies plugins alongside skills. Target repos can override 
 
 - **Master router**: `reusable-opencode-master.yml` inspects event type and comment content, dispatches to the correct sub-workflow via conditional `if:` gates.
 - **Complete-gate** (`reusable-opencode-complete-gate.yml`, 674 lines): The central orchestrator. Monitors CI, handles autofix loops (max 3 attempts per category), runs code review when CI passes. Uses a label state machine.
-- **Common pattern**: Every workflow generates a GitHub App token, checks out this repo into `.ai-workflows/`, bootstraps skills, installs `opencode-ai@1.14.24` globally, runs `opencode run --model opencode-go/deepseek-v4-pro`.
+- **Common pattern**: Every workflow generates a GitHub App token, checks out this repo into `.ai-workflows/`, bootstraps skills, pre-fetches PR/issue context via `fetch-pr-context.ts`, installs `opencode-ai@1.14.24` globally, runs `opencode run --model opencode-go/deepseek-v4-pro`. The pre-fetch step saves raw context to `.ai-workflows/` so skills never need to call `gh` themselves — they read from files.
 
 ### Variants
 

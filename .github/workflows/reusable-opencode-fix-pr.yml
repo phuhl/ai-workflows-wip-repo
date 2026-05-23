@@ -89,6 +89,13 @@ jobs:
       - name: Install OpenCode
         run: npm install -g opencode-ai@1.14.24
 
+      - name: Pre-fetch PR context
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          PR_NUMBER: ${{ github.event.issue.number || github.event.inputs.pr_number }}
+        run: |
+          npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$PR_NUMBER" || true
+
       - name: Run fix-pr skill
         id: fix_pr
         continue-on-error: true

@@ -15,20 +15,17 @@ Set by the caller before loading this reference:
 
 ### 0. Ensure review context is available
 
-Before running audits, ensure the audit skills can access the PR/issue context so they don't flag intentional decisions:
+Before running audits, check if the workflow has pre-fetched context files in `.ai-workflows/`. The workflow runs `fetch-pr-context.ts` before invoking opencode. Verify files exist:
 
 ```bash
-PR_NUM=$(echo "$REF" | grep -oE '[0-9]+' | head -1)
-if [ -n "$PR_NUM" ] && [ ! -f .ai-workflows/review-context.md ]; then
-  ISSUE_NUM=$(gh pr view "$PR_NUM" --json headRefName -q '.headRefName' | grep -oE '^[0-9]+' || true)
-  if [ -z "$ISSUE_NUM" ]; then
-    ISSUE_NUM=$(gh pr view "$PR_NUM" --json body -q '.body' | grep -oEi '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)[[:space:]]*#[0-9]+' | grep -oE '[0-9]+' | head -1)
-  fi
-  npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$PR_NUM" "${ISSUE_NUM:-}" || true
-fi
+if [ -f .ai-workflows/review-context.md ]; then echo "review-context available"; fi
+if [ -f .ai-workflows/pr-body.md ]; then echo "pr-body available"; fi
+if [ -f .ai-workflows/code-comments.md ]; then echo "code-comments available"; fi
 ```
 
-The audit skills (`code-review`, `deduplication-check`, `code-guidelines-check`, `verify-tests`) automatically read context from `.ai-workflows/` via the `review-context.md` shared reference. This step ensures the files exist.
+If no context files exist (e.g., running on a branch without a PR), the audit skills will still work but may flag intentional decisions. This is acceptable for self-check — the skills load `review-context.md` which tells them to read code comments directly when pre-fetched files are absent.
+
+The audit skills (`code-review`, `deduplication-check`, `code-guidelines-check`, `verify-tests`) automatically read context from `.ai-workflows/` via the `review-context.md` shared reference.
 
 ### 1. Run the four audit skills in parallel
 

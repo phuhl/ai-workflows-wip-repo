@@ -22,9 +22,13 @@ Parse `$ARGUMENTS` as: `<pr-number>`. The calling workflow may also pass a `<com
      ISSUE_NUM=$(gh pr view "$ARGUMENTS" --json body -q '.body' | grep -oEi '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)[[:space:]]*#[0-9]+' | grep -oE '[0-9]+' | head -1)
    fi
    ```
-3. Ensure pre-fetched context files exist in `.ai-workflows/`. If they don't, fetch them:
+3. Ensure pre-fetched context files exist in `.ai-workflows/`. The workflow runs `fetch-pr-context.ts` before invoking opencode. Check what's available:
    ```bash
-   npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$ARGUMENTS" "${ISSUE_NUM:-}"
+   ls .ai-workflows/pr-body.md .ai-workflows/issue-body.md .ai-workflows/review-context.md .ai-workflows/code-comments.md 2>/dev/null || echo "Some context files missing"
+   ```
+   If no context files exist at all, fetch the PR body directly:
+   ```bash
+   gh pr view "$ARGUMENTS" --json body -q .body > .ai-workflows/pr-body.md 2>/dev/null
    ```
 4. Read the PR description and related context to understand intent before auditing:
    ```bash
