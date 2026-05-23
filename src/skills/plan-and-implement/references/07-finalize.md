@@ -11,7 +11,7 @@ Merge base one final time, post an implementation summary as a PR comment (leavi
 
 1. Find the open PR and merge the latest base branch one final time:
    ```bash
-   npx tsx .opencode/skills/_shared/scripts/sync-base-branch.ts "$ARGUMENTS" || {
+   npx tsx src/skills/_shared/scripts/sync-base-branch.ts "$ARGUMENTS" || {
      echo "Merge conflicts detected. Stopping."
      exit 1
    }

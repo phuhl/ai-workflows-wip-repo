@@ -55,7 +55,7 @@ Before fixing anything, launch a subagent to distill the issue, comments, PR, an
    fi
    ```
 
-2. Read `.opencode/skills/_shared/references/context-summary.md`.
+2. Read `src/skills/_shared/references/context-summary.md`.
 3. Follow Step 1 and Step 2. Use `<pr-number>` (from `$ARGUMENTS`) for the PR number, `$ISSUE_NUM` for the issue (pass "no issue found" if empty), and determine the repo slug. The subagent will independently fetch all comments and return a concise summary.
 4. After the subagent returns, note key gotchas to the user in 1–2 lines, then proceed.
 
@@ -100,9 +100,9 @@ If context is `review-comments`: Load `references/review-comments.md` and follow
 
 ## Post-write hook
 
-Read `.opencode/skills/_shared/references/post-write-hook.md`.
+Read `src/skills/_shared/references/post-write-hook.md`.
 
-Read `.opencode/skills/_shared/references/git-safety.md`.
+Read `src/skills/_shared/references/git-safety.md`.
 
 ## After fixing
 

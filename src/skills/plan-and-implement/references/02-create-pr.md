@@ -36,14 +36,14 @@ Create a branch, push it, open a draft PR, check off "Open draft PR", and immedi
 
 4. Check off "Open draft PR" in the subtasks comment:
    ```bash
-   npx tsx .opencode/skills/_shared/scripts/check-off-subtask.ts "$ARGUMENTS" "Open draft PR" "$REPO"
+   npx tsx src/skills/_shared/scripts/check-off-subtask.ts "$ARGUMENTS" "Open draft PR" "$REPO"
    ```
 
 ### Write stubs and failing tests
 
 5. Merge the latest base branch before working:
    ```bash
-   npx tsx .opencode/skills/_shared/scripts/sync-base-branch.ts "$ARGUMENTS" || {
+   npx tsx src/skills/_shared/scripts/sync-base-branch.ts "$ARGUMENTS" || {
      echo "Merge conflicts detected. Stopping."
      exit 1
    }
@@ -54,7 +54,7 @@ Create a branch, push it, open a draft PR, check off "Open draft PR", and immedi
 
 7. Format and commit:
    ```bash
-   npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "feat: add stubs and failing tests (#${ARGUMENTS})" <specific-files>
+   npx tsx src/skills/_shared/scripts/format-and-commit.ts "feat: add stubs and failing tests (#${ARGUMENTS})" <specific-files>
    ```
 
 8. Check off "Write stubs and failing tests" in the subtasks comment (same comment as step 4).

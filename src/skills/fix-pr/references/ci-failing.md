@@ -17,7 +17,7 @@ Read the failed CI logs, understand the error, fix the root cause, and push.
 
 3. Format and commit:
    ```bash
-   npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: resolve CI failure – <description> (#<issue_number>)" <specific-files>
+   npx tsx src/skills/_shared/scripts/format-and-commit.ts "fix: resolve CI failure – <description> (#<issue_number>)" <specific-files>
    ```
 
 4. If the `fix-pr-ci` skill is available, you may invoke it for deeper diagnostics:
@@ -34,4 +34,4 @@ Read the failed CI logs, understand the error, fix the root cause, and push.
    RANGE="${MERGE_BASE}..HEAD"
    REF="#${PR_NUMBER}"
    ```
-   Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
+   Read `src/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.

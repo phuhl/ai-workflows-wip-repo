@@ -59,7 +59,7 @@ gh api "repos/{owner}/{repo}/pulls/comments/<comment_id>/reactions" --jq '[.[] |
 If there is a thumbs-down (`-1` / `THUMBS_DOWN`) reaction from a human user (not `"$BOT_USER"`):
 - **Reply and skip.** The user has manually triaged this bot suggestion as not applicable:
   ```bash
-  npx tsx .opencode/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "User triaged this suggestion out — skipping."
+  npx tsx src/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "User triaged this suggestion out — skipping."
   ```
 - Mark the todo item `completed` — no code changes needed.
 
@@ -67,17 +67,17 @@ If no user triage (no thumbs-down, or comment is from a human), proceed to addre
 
 - **Code change requested (suggestion is valid)** — implement the change, then reply to the comment so it is marked as resolved:
    ```bash
-   npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: address review comment – <description>" <specific-files>
+   npx tsx src/skills/_shared/scripts/format-and-commit.ts "fix: address review comment – <description>" <specific-files>
    ```
   Then reply to the comment thread:
   ```bash
-  npx tsx .opencode/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "Addressed in commit: <description>"
+  npx tsx src/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "Addressed in commit: <description>"
   ```
 
 - **Push-back (suggestion is not appropriate, current code is intentional)** — reply explaining why:
   For code-line comments:
   ```bash
-  npx tsx .opencode/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "<explanation of why the current code is correct or intentional>"
+  npx tsx src/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "<explanation of why the current code is correct or intentional>"
   ```
   For main-thread comments:
   ```bash
@@ -121,4 +121,4 @@ RANGE="${MERGE_BASE}..HEAD"
 REF="#${PR_NUMBER}"
 ```
 
-Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
+Read `src/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.

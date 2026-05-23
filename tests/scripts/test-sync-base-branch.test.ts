@@ -19,7 +19,7 @@ describe("syncBaseBranch", () => {
       return "";
     });
     const { syncBaseBranch } =
-      await import("../../.opencode/skills/_shared/scripts/sync-base-branch");
+      await import("../../src/skills/_shared/scripts/sync-base-branch");
     const result = syncBaseBranch("");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(1);
@@ -28,7 +28,7 @@ describe("syncBaseBranch", () => {
 
   it("exits 1 with empty issue number", async () => {
     const { syncBaseBranch } =
-      await import("../../.opencode/skills/_shared/scripts/sync-base-branch");
+      await import("../../src/skills/_shared/scripts/sync-base-branch");
     const result = syncBaseBranch("");
     expect(result.exitCode).toBe(1);
   });
@@ -43,7 +43,7 @@ describe("syncBaseBranch", () => {
     });
 
     const { syncBaseBranch } =
-      await import("../../.opencode/skills/_shared/scripts/sync-base-branch");
+      await import("../../src/skills/_shared/scripts/sync-base-branch");
     const result = syncBaseBranch("42");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(2);
@@ -75,7 +75,7 @@ describe("syncBaseBranch", () => {
     });
 
     const { syncBaseBranch } =
-      await import("../../.opencode/skills/_shared/scripts/sync-base-branch");
+      await import("../../src/skills/_shared/scripts/sync-base-branch");
     const result = syncBaseBranch("42");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(3);
@@ -101,7 +101,7 @@ describe("syncBaseBranch", () => {
     });
 
     const { syncBaseBranch } =
-      await import("../../.opencode/skills/_shared/scripts/sync-base-branch");
+      await import("../../src/skills/_shared/scripts/sync-base-branch");
     const result = syncBaseBranch("42");
     expect(result.ok).toBe(true);
     expect(result.exitCode).toBe(0);

@@ -16,7 +16,7 @@ describe("checkOffSubtask", () => {
 
   it("exits 1 with no arguments", async () => {
     const { checkOffSubtask } =
-      await import("../../.opencode/skills/_shared/scripts/check-off-subtask");
+      await import("../../src/skills/_shared/scripts/check-off-subtask");
     const result = checkOffSubtask("", "");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(1);
@@ -25,7 +25,7 @@ describe("checkOffSubtask", () => {
 
   it("exits 1 with missing subtask text", async () => {
     const { checkOffSubtask } =
-      await import("../../.opencode/skills/_shared/scripts/check-off-subtask");
+      await import("../../src/skills/_shared/scripts/check-off-subtask");
     const result = checkOffSubtask("42", "");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(1);
@@ -37,7 +37,7 @@ describe("checkOffSubtask", () => {
     });
 
     const { checkOffSubtask } =
-      await import("../../.opencode/skills/_shared/scripts/check-off-subtask");
+      await import("../../src/skills/_shared/scripts/check-off-subtask");
     const result = checkOffSubtask("42", "Open draft PR");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(2);
@@ -56,7 +56,7 @@ describe("checkOffSubtask", () => {
     });
 
     const { checkOffSubtask } =
-      await import("../../.opencode/skills/_shared/scripts/check-off-subtask");
+      await import("../../src/skills/_shared/scripts/check-off-subtask");
     const result = checkOffSubtask("42", "Open draft PR", "test-org/test-repo");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(3);
@@ -86,7 +86,7 @@ describe("checkOffSubtask", () => {
     });
 
     const { checkOffSubtask } =
-      await import("../../.opencode/skills/_shared/scripts/check-off-subtask");
+      await import("../../src/skills/_shared/scripts/check-off-subtask");
     const result = checkOffSubtask("42", "Open draft PR", "test-org/test-repo");
     expect(result.ok).toBe(true);
     expect(result.exitCode).toBe(0);
@@ -113,7 +113,7 @@ describe("checkOffSubtask", () => {
     });
 
     const { checkOffSubtask } =
-      await import("../../.opencode/skills/_shared/scripts/check-off-subtask");
+      await import("../../src/skills/_shared/scripts/check-off-subtask");
     const result = checkOffSubtask(
       "42",
       "Nonexistent Task",
@@ -149,7 +149,7 @@ describe("checkOffSubtask", () => {
     });
 
     const { checkOffSubtask } =
-      await import("../../.opencode/skills/_shared/scripts/check-off-subtask");
+      await import("../../src/skills/_shared/scripts/check-off-subtask");
     const result = checkOffSubtask("42", "Write stubs", "test-org/test-repo");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(4);

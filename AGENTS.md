@@ -8,7 +8,7 @@ Target repos copy wrapper workflow files from `wrappers/` into their own `.githu
 
 ## Skill format
 
-Every skill is a directory under `.opencode/skills/<name>/` containing a `SKILL.md` with YAML frontmatter:
+Every skill is a directory under `src/skills/<name>/` or `.opencode/skills/<name>/` containing a `SKILL.md` with YAML frontmatter:
 
 ```yaml
 ---
@@ -27,8 +27,8 @@ Supporting files go in `references/` subdirectories. Skill frontmatter is requir
 
 Skills are split into two directories:
 
-- **`.opencode/skills/`** — Skills consumed by target repos. Copied by `bootstrap-skills.ts` at CI time. These are the public workflow-facing skills.
-- **`src/skills/`** — Internal skills for the ai-workflows repo itself. NOT copied by bootstrap. These are tooling for developing and testing the workflow system (e.g., `verify-e2e`).
+- **`src/skills/`** — Skills consumed by target repos. Copied by `bootstrap-skills.ts` at CI time. These are the public workflow-facing skills.
+- **`.opencode/skills/`** — Internal skills for the ai-workflows repo itself. NOT copied by bootstrap. These are tooling for developing and testing the workflow system (e.g., `verify-e2e`).
 
 Target repos never see internal skills. The `opencode.json` config includes both paths so the runtime loads all skills during local development.
 
@@ -36,11 +36,11 @@ System-level skills (like `skill-creator`, `create-code-review-skill`) live in `
 
 ## Shared infrastructure
 
-Common resources used by multiple skills live under `.opencode/skills/_shared/`. Directories beginning with `_` are not treated as skills by the runtime.
+Common resources used by multiple skills live under `src/skills/_shared/`. Directories beginning with `_` are not treated as skills by the runtime.
 
 ### Shared references (`_shared/references/`)
 
-Skills load these via `Read .opencode/skills/_shared/references/<name>.md` instead of inlining the same content:
+Skills load these via `Read src/skills/_shared/references/<name>.md` instead of inlining the same content:
 
 - **`post-write-hook.md`** — Post-write formatting behavior (prettier, eslint, tsc).
 - **`git-safety.md`** — Git safety rules (never stage protected directories).
@@ -66,12 +66,12 @@ Having these reference files is **optional but recommended** — they improve sk
 
 ## Plugins
 
-Two TypeScript plugins in `.opencode/plugins/`, consumed by the OpenCode CLI runtime via `@opencode-ai/plugin@1.14.24` (the only dependency, defined in `.opencode/package.json`):
+Two TypeScript plugins in `src/plugins/`, consumed by the OpenCode CLI runtime via `@opencode-ai/plugin@1.14.24` (the only dependency, defined in `.opencode/package.json`):
 
 - **`file-hook.ts`** — After every `write`/`edit` of a `.ts/.tsx/.js/.jsx/.mjs/.cjs` file, runs `prettier`, `eslint`, and `tsc --noEmit`. Non-blocking (only logs issues).
 - **`git-guard.ts`** — Intercepts `git add` and `git commit`. Automatically unstages any **new** files (`--diff-filter=A`) from `.ai-workflows/`, `.opencode/skills/`, or `.opencode/plugins/`.
 
-The bootstrap script copies plugins alongside skills. Target repos can override plugins by placing files in their own `.opencode/plugins/` (local wins over shared).
+The bootstrap script copies plugins from `src/plugins/` to the target repo's `.opencode/plugins/`. Target repos can override plugins by placing files in their own `.opencode/plugins/` (local wins over shared).
 
 ## Workflow architecture
 
@@ -157,8 +157,8 @@ Prerequisites: `vitest` and `tsx` installed (run `npm install`).
 - **Respect developer intent**: Audit skills must read PR/issue context (from pre-fetched `.ai-workflows/` files or directly) before forming findings. Any code change that is explicitly documented as intentional — in the PR description, issue discussion, or code comments — must NOT be flagged. This prevents review skills from flagging deliberate decisions (e.g., removing backwards-compat code) based on outdated assumptions.
 - **Actor gating**: Workflows gate on allowed actors via configurable `ALLOWED_ACTORS` input (default `'phuhl'`). Gating can be bypassed per-repo via the `BYPASS_ACTOR_CHECK` input. Target repos configure `vars.ALLOWED_ACTORS` (comma-separated GitHub usernames) and optionally `vars.BYPASS_ACTOR_CHECK` (boolean) as repository variables. Private repos automatically bypass actor checks (`BYPASS_ACTOR_CHECK` defaults to `github.event.repository.private` in wrappers).
 - **PR stacking**: Issue comments with "stack on #42" or "base on #42" cause `plan-and-implement` to use that PR's branch as the base.
-- **OpenCode config**: `opencode.json` sets `skills.paths` to `[".opencode/skills"]` and allows `/tmp/**` via `external_directory` permission. Target repos need this too.
-- **Tests for new files**: New scripts and plugins should include corresponding test files. Scripts in `scripts/` or `.opencode/skills/_shared/scripts/` get tests in `tests/scripts/`; plugins in `.opencode/plugins/` get tests in `.opencode/tests/`.
+- **OpenCode config**: `opencode.json` sets `skills.paths` to `[".opencode/skills", "src/skills"]` and allows `/tmp/**` via `external_directory` permission. Target repos need `[".opencode/skills"]` (populated by bootstrap).
+- **Tests for new files**: New scripts and plugins should include corresponding test files. Scripts in `scripts/` or `src/skills/_shared/scripts/` get tests in `tests/scripts/`; plugins in `src/plugins/` get tests in `.opencode/tests/`.
 
 ## E2E test suite (this repo only)
 

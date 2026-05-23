@@ -13,7 +13,7 @@ Your job is to audit the test suite for completeness and quality. This is not a 
 
 ## Before auditing
 
-Read `.opencode/skills/_shared/references/review-context.md` and follow all its instructions. Never flag missing test coverage for code paths that are explicitly documented as intentional throwaways, debug-only, or backwards-compat removal in the PR description, issue, or code comments.
+Read `src/skills/_shared/references/review-context.md` and follow all its instructions. Never flag missing test coverage for code paths that are explicitly documented as intentional throwaways, debug-only, or backwards-compat removal in the PR description, issue, or code comments.
 
 ## How to approach the audit
 

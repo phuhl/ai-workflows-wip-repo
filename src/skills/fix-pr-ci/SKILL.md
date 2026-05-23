@@ -54,7 +54,7 @@ After applying fixes, stage and push. **Do not run tests locally.**
 Stage only the files you changed (avoid accidentally staging secrets):
 
 ```bash
-npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: resolve CI failure – <what broke>" <specific-files>
+npx tsx src/skills/_shared/scripts/format-and-commit.ts "fix: resolve CI failure – <what broke>" <specific-files>
 ```
 
 ## Step 4 — Confirm CI passes
@@ -84,10 +84,10 @@ RANGE="${MERGE_BASE}..HEAD"
 REF="#${PR_NUMBER}"
 ```
 
-Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
+Read `src/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
 
 ## Post-write hook
 
-Read `.opencode/skills/_shared/references/post-write-hook.md`.
+Read `src/skills/_shared/references/post-write-hook.md`.
 
-Read `.opencode/skills/_shared/references/git-safety.md`.
+Read `src/skills/_shared/references/git-safety.md`.

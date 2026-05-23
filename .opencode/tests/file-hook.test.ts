@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
-import { FileHook } from "../plugins/file-hook";
+import { FileHook } from "../../src/plugins/file-hook";
 
 function mockShell(exitCode: number, stdout = "", stderr = "") {
   const proc: any = Promise.resolve({ exitCode, stdout, stderr });
@@ -143,11 +143,16 @@ describe("file-hook", () => {
     });
 
     await hooks["tool.execute.after"]?.(
-      makeInput("write", { filePath: "/home/user/.opencode/plugins/file-hook.ts" }),
+      makeInput("write", {
+        filePath: "/home/user/.opencode/plugins/file-hook.ts",
+      }),
       makeOutput() as any,
     );
     await hooks["tool.execute.after"]?.(
-      makeInput("write", { filePath: "/home/user/.opencode/skills/_shared/scripts/post-review-reply.ts" }),
+      makeInput("write", {
+        filePath:
+          "/home/user/.opencode/skills/_shared/scripts/post-review-reply.ts",
+      }),
       makeOutput() as any,
     );
     await hooks["tool.execute.after"]?.(

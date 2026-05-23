@@ -13,7 +13,7 @@ Your job is to scan the changes in `$ARGUMENTS` (a git commit range like `abc123
 
 ## Before checking
 
-Read `.opencode/skills/_shared/references/review-context.md` and follow all its instructions. Never flag code that is explicitly documented as intentionally duplicated or kept separate for a documented reason.
+Read `src/skills/_shared/references/review-context.md` and follow all its instructions. Never flag code that is explicitly documented as intentionally duplicated or kept separate for a documented reason.
 
 ## How to approach the check
 

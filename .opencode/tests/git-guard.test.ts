@@ -8,7 +8,7 @@ vi.mock("node:child_process", () => ({
   execSync: mockExecSync,
 }));
 
-import { GitGuard } from "../plugins/git-guard";
+import { GitGuard } from "../../src/plugins/git-guard";
 
 function setupHook(logs: any[] = []) {
   const client = {

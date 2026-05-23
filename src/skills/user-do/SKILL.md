@@ -38,7 +38,7 @@ PROMPT=$(cat .opencode/do-prompt.txt 2>/dev/null || echo "$ARGUMENTS")
 3. **Execute the user's instructions.** You have full git write access — you can modify files, push commits, create PR comments, and interact with the repository.
 4. **Before committing**, always use the shared format-and-commit script:
    ```bash
-   npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "<descriptive message>" <specific-files>
+   npx tsx src/skills/_shared/scripts/format-and-commit.ts "<descriptive message>" <specific-files>
    ```
 5. **After finishing**, post a brief comment summarizing what was done.
 
@@ -58,13 +58,13 @@ PROMPT=$(cat .opencode/do-prompt.txt 2>/dev/null || echo "$ARGUMENTS")
      REF="do"
    fi
    ```
-   Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
+   Read `src/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
 
 ## Post-write hook
 
-Read `.opencode/skills/_shared/references/post-write-hook.md`.
+Read `src/skills/_shared/references/post-write-hook.md`.
 
-Read `.opencode/skills/_shared/references/git-safety.md`.
+Read `src/skills/_shared/references/git-safety.md`.
 
 ## Principles
 - Do exactly what the user asked — no more, no less.

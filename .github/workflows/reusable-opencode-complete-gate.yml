@@ -58,7 +58,7 @@ jobs:
       - name: Bootstrap skills
         run: |
           npx tsx .ai-workflows/scripts/bootstrap-skills.ts \
-            --shared-dir .ai-workflows/.opencode/skills \
+            --shared-dir .ai-workflows/src/skills \
             --local-dir .opencode/skills \
             --out-dir .opencode/skills
             echo "*" > .ai-workflows/.gitignore

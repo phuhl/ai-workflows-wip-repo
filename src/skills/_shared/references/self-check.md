@@ -52,7 +52,7 @@ For each `must-fix` or `should-fix` finding:
 - Format and commit:
 
 ```bash
-npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: resolve self-check finding – <description> (${REF})" <specific-files>
+npx tsx src/skills/_shared/scripts/format-and-commit.ts "fix: resolve self-check finding – <description> (${REF})" <specific-files>
 ```
 
 ### 4. Repeat until clean

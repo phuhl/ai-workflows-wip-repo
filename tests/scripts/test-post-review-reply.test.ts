@@ -16,7 +16,7 @@ describe("postReviewReply", () => {
 
   it("exits 1 with no arguments", async () => {
     const { postReviewReply } =
-      await import("../../.opencode/skills/_shared/scripts/post-review-reply");
+      await import("../../src/skills/_shared/scripts/post-review-reply");
     const result = postReviewReply(0, 0, "");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(1);
@@ -29,7 +29,7 @@ describe("postReviewReply", () => {
     });
 
     const { postReviewReply } =
-      await import("../../.opencode/skills/_shared/scripts/post-review-reply");
+      await import("../../src/skills/_shared/scripts/post-review-reply");
     const result = postReviewReply(42, 12345, "This is a reply");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(2);
@@ -47,7 +47,7 @@ describe("postReviewReply", () => {
     });
 
     const { postReviewReply } =
-      await import("../../.opencode/skills/_shared/scripts/post-review-reply");
+      await import("../../src/skills/_shared/scripts/post-review-reply");
     const result = postReviewReply(
       42,
       12345,
@@ -69,7 +69,7 @@ describe("postReviewReply", () => {
     });
 
     const { postReviewReply } =
-      await import("../../.opencode/skills/_shared/scripts/post-review-reply");
+      await import("../../src/skills/_shared/scripts/post-review-reply");
     const result = postReviewReply(42, 12345, "This is a reply");
     expect(result.ok).toBe(true);
     expect(result.exitCode).toBe(0);
@@ -89,7 +89,7 @@ describe("postReviewReply", () => {
     });
 
     const { postReviewReply } =
-      await import("../../.opencode/skills/_shared/scripts/post-review-reply");
+      await import("../../src/skills/_shared/scripts/post-review-reply");
     const result = postReviewReply(
       42,
       12345,

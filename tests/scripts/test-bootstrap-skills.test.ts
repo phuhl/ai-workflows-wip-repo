@@ -110,8 +110,8 @@ describe("bootstrapSkills", () => {
     const tmp = tmpdir();
     try {
       // Match the real CI layout:
-      // sharedDir = .ai-workflows/.opencode/skills (ends in /skills)
-      // sharedPluginsDir = .ai-workflows/.opencode/plugins  (sibling of skills)
+      // sharedDir = .ai-workflows/src/skills (ends in /skills)
+      // sharedPluginsDir = .ai-workflows/src/plugins  (sibling of skills)
       // outDir = .opencode/skills (ends in /skills)
       // outPluginsDir = .opencode/plugins (sibling of skills, computed)
       const sharedSkills = path.join(tmp, "shared", "skills");

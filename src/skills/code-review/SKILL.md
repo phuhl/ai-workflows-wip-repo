@@ -13,7 +13,7 @@ Your job is to give a thorough, actionable code review tailored to this codebase
 
 ## Before reviewing
 
-Read `.opencode/skills/_shared/references/review-context.md` and follow all its instructions. Never flag a code change that is explicitly documented as intentional in the PR description, issue discussion, or code comments.
+Read `src/skills/_shared/references/review-context.md` and follow all its instructions. Never flag a code change that is explicitly documented as intentional in the PR description, issue discussion, or code comments.
 
 ## How to approach the review
 

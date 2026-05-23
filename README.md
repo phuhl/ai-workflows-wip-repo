@@ -100,7 +100,7 @@ apparts-js/ai-workflows/
 │   ├── reusable-opencode-fix-pr.yml
 │   ├── reusable-opencode-plan-and-implement.yml
 │   └── reusable-opencode-plan.yml
-├── .opencode/skills/           # Skills consumed by target repos (copied by bootstrap)
+├── src/skills/                 # Skills consumed by target repos (copied by bootstrap)
 │   ├── _shared/                # Shared infrastructure (references, scripts)
 │   ├── code-guidelines-check/
 │   ├── code-review/
@@ -113,9 +113,9 @@ apparts-js/ai-workflows/
 │   ├── review-pr/
 │   ├── user-do/
 │   └── verify-tests/
-├── src/skills/                  # Internal skills for ai-workflows development (NOT copied)
+├── .opencode/skills/           # Internal skills for ai-workflows development (NOT copied)
 │   └── verify-e2e/              # E2E verification skill
-├── .opencode/plugins/          # CLI runtime plugins
+├── src/plugins/                # CLI runtime plugins (copied by bootstrap)
 │   ├── file-hook.ts            # Post-write prettier/eslint/tsc
 │   └── git-guard.ts            # Prevents staging protected directories
 ├── scripts/

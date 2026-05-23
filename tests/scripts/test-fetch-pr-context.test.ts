@@ -32,7 +32,7 @@ describe("fetchPrContext", () => {
 
   it("exits 1 with no PR number", async () => {
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(1);
@@ -42,7 +42,7 @@ describe("fetchPrContext", () => {
 
   it("exits 1 with empty PR number", async () => {
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("", "42");
     expect(result.exitCode).toBe(1);
   });
@@ -53,7 +53,7 @@ describe("fetchPrContext", () => {
     });
 
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("123");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(2);
@@ -69,7 +69,7 @@ describe("fetchPrContext", () => {
     });
 
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("999");
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(2);
@@ -136,7 +136,7 @@ describe("fetchPrContext", () => {
     existsSyncMock.mockImplementation((_p: unknown) => true);
 
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("123");
 
     expect(result.ok).toBe(true);
@@ -216,7 +216,7 @@ describe("fetchPrContext", () => {
     );
 
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("123", "42");
 
     expect(result.ok).toBe(true);
@@ -280,7 +280,7 @@ describe("fetchPrContext", () => {
     });
 
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("123");
 
     expect(result.ok).toBe(true);
@@ -332,7 +332,7 @@ describe("fetchPrContext", () => {
     existsSyncMock.mockImplementation((_p: unknown) => false);
 
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("123");
 
     expect(result.ok).toBe(true);
@@ -410,7 +410,7 @@ describe("fetchPrContext", () => {
     );
 
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("123");
 
     expect(result.ok).toBe(true);
@@ -478,7 +478,7 @@ describe("fetchPrContext", () => {
     readFileSyncMock.mockImplementation((_p: unknown) => "const x = 1;");
 
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("123");
 
     expect(result.ok).toBe(true);
@@ -544,7 +544,7 @@ describe("fetchPrContext", () => {
     readFileSyncMock.mockImplementation((_p: unknown) => "const x = 1;");
 
     const { fetchPrContext } =
-      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+      await import("../../src/skills/_shared/scripts/fetch-pr-context");
     const result = fetchPrContext("123");
 
     expect(result.ok).toBe(true);

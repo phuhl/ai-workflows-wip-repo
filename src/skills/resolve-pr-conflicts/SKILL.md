@@ -27,7 +27,7 @@ Before resolving conflicts, launch a subagent to understand what the PR is about
    fi
    ```
 
-2. Read `.opencode/skills/_shared/references/context-summary.md`.
+2. Read `src/skills/_shared/references/context-summary.md`.
 3. Follow Step 1 and Step 2. Use the PR number and `$ISSUE_NUM` (pass "no issue found" if empty). When reading the summary, pay special attention to the **Description** and **Critical gotchas** — these will guide which side of a conflict to keep or how to merge both.
 
 ## Step 1 — Check out the branch and identify the base
@@ -118,10 +118,10 @@ RANGE="${MERGE_BASE}..HEAD"
 REF="#${PR_NUMBER}"
 ```
 
-Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
+Read `src/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
 
 ## Post-write hook
 
-Read `.opencode/skills/_shared/references/post-write-hook.md`.
+Read `src/skills/_shared/references/post-write-hook.md`.
 
-Read `.opencode/skills/_shared/references/git-safety.md`.
+Read `src/skills/_shared/references/git-safety.md`.

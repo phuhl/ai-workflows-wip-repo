@@ -11,7 +11,7 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
 1. Find the open PR and merge the latest base branch before working:
    ```bash
    PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
-   npx tsx .opencode/skills/_shared/scripts/sync-base-branch.ts "$ARGUMENTS" || {
+   npx tsx src/skills/_shared/scripts/sync-base-branch.ts "$ARGUMENTS" || {
      echo "Merge conflicts detected. Stopping."
      exit 1
    }
@@ -26,7 +26,7 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
      ```
    - For each thread-starter (`in_reply_to_id` is null, `user` is not `"$BOT_USER"`) that has no replies:
      - If the suggestion is valid → implement, commit, push.
-      - If not appropriate → reply with explanation via `npx tsx .opencode/skills/_shared/scripts/post-review-reply.ts "$PR_NUMBER" <id> "<explanation>"`.
+      - If not appropriate → reply with explanation via `npx tsx src/skills/_shared/scripts/post-review-reply.ts "$PR_NUMBER" <id> "<explanation>"`.
    - Verify after addressing:
      ```bash
      npx tsx .ai-workflows/scripts/verify-no-unresolved-comments.ts "$PR_NUMBER" "$REPO"
@@ -37,7 +37,7 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
      a. Do the work (implement logic, refactor, write docs).
      b. Format and commit:
         ```bash
-        npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "feat: <description> (#${ARGUMENTS})" <specific-files>
+        npx tsx src/skills/_shared/scripts/format-and-commit.ts "feat: <description> (#${ARGUMENTS})" <specific-files>
         ```
      c. Post a PR comment describing what was done in this commit:
         ```bash
@@ -45,13 +45,13 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
         ```
      d. Check off the subtask in the subtasks comment:
         ```bash
-        npx tsx .opencode/skills/_shared/scripts/check-off-subtask.ts "$ARGUMENTS" "<exact text>" "$REPO"
+        npx tsx src/skills/_shared/scripts/check-off-subtask.ts "$ARGUMENTS" "<exact text>" "$REPO"
         ```
 
 4. **Ensure all subtasks up to "Fix issues found in audit" are checked.** The gate will retrigger this skill if any checkbox remains unchecked. Fetch the current subtasks comment and for any still-unchecked subtask among "Implement logic to pass tests" and "Update docs / README if needed":
    - If the subtask was intentionally completed in step 3, check it with:
      ```bash
-     npx tsx .opencode/skills/_shared/scripts/check-off-subtask.ts "$ARGUMENTS" "<text>" "$REPO"
+     npx tsx src/skills/_shared/scripts/check-off-subtask.ts "$ARGUMENTS" "<text>" "$REPO"
      ```
    - If the subtask was **not applicable** (no docs or README changes were needed, or no further logic was required), manually update the subtasks comment with strikethrough syntax `- [x] ~~<text>~~`.
 

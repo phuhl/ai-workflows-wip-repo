@@ -116,6 +116,6 @@ gh pr edit <pr-number> --add-reviewer phuhl
 
 ## Post-write hook
 
-Read `.opencode/skills/_shared/references/post-write-hook.md`.
+Read `src/skills/_shared/references/post-write-hook.md`.
 
-Read `.opencode/skills/_shared/references/git-safety.md`.
+Read `src/skills/_shared/references/git-safety.md`.

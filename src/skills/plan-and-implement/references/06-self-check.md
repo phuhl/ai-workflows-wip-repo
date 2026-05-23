@@ -24,11 +24,11 @@ Before running audits, ensure every code-line review comment on this PR is handl
 3. For each such comment:
    - **If the suggestion is valid** — implement the code change. Format, commit, push:
      ```bash
-     npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: address review comment — <description> (#${ARGUMENTS})" <specific-files>
+     npx tsx src/skills/_shared/scripts/format-and-commit.ts "fix: address review comment — <description> (#${ARGUMENTS})" <specific-files>
      ```
    - **If the suggestion is not appropriate** — reply explaining why the current code is correct or intentional:
      ```bash
-     npx tsx .opencode/skills/_shared/scripts/post-review-reply.ts "$PR_NUMBER" <comment_id> "<explanation>"
+     npx tsx src/skills/_shared/scripts/post-review-reply.ts "$PR_NUMBER" <comment_id> "<explanation>"
      ```
    - **If the comment is a question** — reply with your answer.
 
@@ -43,7 +43,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
 ### 1. Find PR and merge base
    ```bash
    PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
-   npx tsx .opencode/skills/_shared/scripts/sync-base-branch.ts "$ARGUMENTS" || {
+   npx tsx src/skills/_shared/scripts/sync-base-branch.ts "$ARGUMENTS" || {
      echo "Merge conflicts detected. Stopping."
      exit 1
    }
@@ -58,7 +58,7 @@ Before running audits, ensure every code-line review comment on this PR is handl
    ```
 
 3. Run self-check audits:
-   Read `.opencode/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
+   Read `src/skills/_shared/references/self-check.md` and follow its instructions from top to bottom.
 
 4. Check off "Fix issues found in audit" in the subtasks comment.
 
