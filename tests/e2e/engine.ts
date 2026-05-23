@@ -168,11 +168,14 @@ export function deleteBranch(repo: string, branch: string): void {
   gh(`api repos/${repo}/git/refs/heads/${branch} -X DELETE`);
 }
 
-export function closeIssue(repo: string, issueNumber: number): void {
+export async function closeIssue(
+  repo: string,
+  issueNumber: number,
+): Promise<void> {
   gh(`issue close ${issueNumber} --repo ${repo}`);
 }
 
-export function closePr(repo: string, prNumber: number): void {
+export async function closePr(repo: string, prNumber: number): Promise<void> {
   gh(`pr close ${prNumber} --repo ${repo}`);
 }
 

@@ -36,6 +36,19 @@ function runVitest(): boolean {
   }
 }
 
+function runTypecheck(): boolean {
+  try {
+    execSync("npx tsc --noEmit", {
+      cwd: ROOT_DIR,
+      stdio: "inherit",
+      encoding: "utf-8",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function runPluginTests(): boolean {
   const opencodeDir = path.join(ROOT_DIR, ".opencode");
   if (!existsSync(path.join(opencodeDir, "node_modules", "vitest"))) {
@@ -62,6 +75,8 @@ console.log("==========================================");
 // 1. Structural validation (vitest with 'validate' glob)
 // 2. Script tests (vitest with 'scripts' glob)
 // Both covered by main vitest run
+
+runSuite("TypeScript typecheck", runTypecheck);
 
 console.log("\n--- Vitest tests ---\n");
 runSuite("Vitest tests", runVitest);
