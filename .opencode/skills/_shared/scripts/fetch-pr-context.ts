@@ -29,22 +29,14 @@ function gh(args: string): GhResult {
   }
 }
 
-function getRepo(): string {
+function getRepo(): GhResult {
   const r = gh("repo view --json nameWithOwner -q .nameWithOwner");
-  if (!r.ok) {
-    console.error("Error: could not determine repository.");
-    process.exit(2);
-  }
-  return r.stdout;
+  return r;
 }
 
-function getPrHeadBranch(prNumber: string): string {
+function getPrHeadBranch(prNumber: string): GhResult {
   const r = gh(`pr view ${prNumber} --json headRefName -q .headRefName`);
-  if (!r.ok) {
-    console.error(`Error: could not find PR #${prNumber}`);
-    process.exit(2);
-  }
-  return r.stdout;
+  return r;
 }
 
 function getPrBaseBranch(prNumber: string): string {
@@ -178,7 +170,17 @@ export function fetchPrContext(
     };
   }
 
-  const repo = getRepo();
+  const repoResult = getRepo();
+  if (!repoResult.ok) {
+    return {
+      ok: false,
+      exitCode: 2,
+      output: `${USAGE}\nError: could not determine repository`,
+      files: [],
+    };
+  }
+  const repo = repoResult.stdout;
+
   const saved: string[] = [];
   const lines: string[] = [];
 
@@ -258,7 +260,16 @@ export function fetchPrContext(
   }
 
   // 6. Changed files list and code comments
-  const head = getPrHeadBranch(prNumber);
+  const headResult = getPrHeadBranch(prNumber);
+  if (!headResult.ok) {
+    return {
+      ok: false,
+      exitCode: 2,
+      output: `${USAGE}\nError: could not find PR #${prNumber}`,
+      files: saved,
+    };
+  }
+  const head = headResult.stdout;
   const base = getPrBaseBranch(prNumber);
 
   try {
