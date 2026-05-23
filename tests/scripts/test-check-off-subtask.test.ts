@@ -123,4 +123,36 @@ describe("checkOffSubtask", () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain("Warning:");
   });
+
+  it("exits 4 when PATCH comment update fails", async () => {
+    const subtaskBody = `## Subtasks
+- [ ] Write stubs and failing tests
+- [ ] Implement logic to pass tests`;
+
+    let callCount = 0;
+    execSyncMock.mockImplementation((cmd: unknown) => {
+      const cmdStr = String(cmd);
+      callCount++;
+      if (cmdStr.includes("repo view")) {
+        return "test-org/test-repo";
+      }
+      if (cmdStr.includes("issue view")) {
+        return JSON.stringify({ id: "1", body: subtaskBody });
+      }
+      if (cmdStr.includes("--method PATCH")) {
+        throw new Error("PATCH failed");
+      }
+      if (cmdStr.includes("api") && cmdStr.includes("comments")) {
+        return "12345";
+      }
+      return "";
+    });
+
+    const { checkOffSubtask } =
+      await import("../../.opencode/skills/_shared/scripts/check-off-subtask");
+    const result = checkOffSubtask("42", "Write stubs", "test-org/test-repo");
+    expect(result.ok).toBe(false);
+    expect(result.exitCode).toBe(4);
+    expect(result.output).toContain("failed to update");
+  });
 });

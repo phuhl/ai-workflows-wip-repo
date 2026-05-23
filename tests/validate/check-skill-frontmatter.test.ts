@@ -17,7 +17,6 @@ interface YamlFrontmatter {
   "allowed-tools"?: string;
   context?: string;
   agent?: string;
-  subagent_type?: string;
 }
 
 function parseFrontmatter(content: string): YamlFrontmatter | null {
@@ -90,8 +89,8 @@ function checkSkill(dir: string): FrontmatterResult {
     result.warnings.push("missing 'context'");
   }
 
-  if (!fm.agent && !fm.subagent_type) {
-    result.warnings.push("missing 'agent' or 'subagent_type'");
+  if (!fm.agent) {
+    result.errors.push("missing 'agent' field (required per AGENTS.md)");
   }
 
   if (result.errors.length > 0) {

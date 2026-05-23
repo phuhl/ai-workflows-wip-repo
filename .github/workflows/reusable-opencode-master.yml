@@ -32,65 +32,65 @@ jobs:
       (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
        (contains(github.event.comment.body, '/oc do') || contains(github.event.comment.body, '/opencode do')) &&
        github.actor == 'phuhl'
-     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-do.yml@master
-     secrets: inherit
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-do.yml@master
+    secrets: inherit
 
-   opencode-plan:
-     if: |
-       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
-       (github.event_name == 'issue_comment' &&
-        !github.event.issue.pull_request &&
-        (contains(github.event.comment.body, '/oc plan') || contains(github.event.comment.body, '/opencode plan')) &&
-        github.actor == 'phuhl')
-     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-plan.yml@master
-     secrets: inherit
+  opencode-plan:
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
+      (github.event_name == 'issue_comment' &&
+       !github.event.issue.pull_request &&
+       (contains(github.event.comment.body, '/oc plan') || contains(github.event.comment.body, '/opencode plan')) &&
+       github.actor == 'phuhl')
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-plan.yml@master
+    secrets: inherit
 
-   opencode-fix-pr:
-     if: |
-       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
-       (github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request &&
-        (contains(github.event.comment.body, '/oc fix-pr') || contains(github.event.comment.body, '/opencode fix-pr')) &&
-        github.actor == 'phuhl')
-     uses: ./.github/workflows/reusable-opencode-fix-pr.yml
-     secrets: inherit
+  opencode-fix-pr:
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       (contains(github.event.comment.body, '/oc fix-pr') || contains(github.event.comment.body, '/opencode fix-pr')) &&
+       github.actor == 'phuhl')
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-fix-pr.yml@master
+    secrets: inherit
 
-   opencode-code-review:
-     if: |
-       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
-       (github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request &&
-        (contains(github.event.comment.body, '/oc code-review') || contains(github.event.comment.body, '/opencode code-review')) &&
-        github.actor == 'phuhl')
-     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-code-review.yml@master
-     secrets: inherit
+  opencode-code-review:
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       (contains(github.event.comment.body, '/oc code-review') || contains(github.event.comment.body, '/opencode code-review')) &&
+       github.actor == 'phuhl')
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-code-review.yml@master
+    secrets: inherit
 
-   opencode-address-review:
-     if: |
-       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
-       (github.event_name == 'pull_request_review' &&
-        github.event.review.user.login == 'phuhl' &&
-        (github.event.review.state == 'changes_requested' || github.event.review.state == 'commented')) ||
-       (github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request &&
-        (contains(github.event.comment.body, '/oc address-review') || contains(github.event.comment.body, '/opencode address-review')) &&
-        github.actor == 'phuhl')
-     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-address-review.yml@master
-     secrets: inherit
+  opencode-address-review:
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
+      (github.event_name == 'pull_request_review' &&
+       github.event.review.user.login == 'phuhl' &&
+       (github.event.review.state == 'changes_requested' || github.event.review.state == 'commented')) ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       (contains(github.event.comment.body, '/oc address-review') || contains(github.event.comment.body, '/opencode address-review')) &&
+       github.actor == 'phuhl')
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-address-review.yml@master
+    secrets: inherit
 
-   opencode-complete-gate:
-     concurrency:
-       group: complete-gate-${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number || github.run_id }}
-       cancel-in-progress: false
-     if: |
-       (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
-       (github.event_name == 'pull_request' && github.event.label.name == 'auto-review') ||
-       github.event_name == 'workflow_run' ||
-       (github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request &&
-        (contains(github.event.comment.body, '/oc complete-gate') || contains(github.event.comment.body, '/opencode complete-gate')) &&
-        github.actor == 'phuhl')
-    uses: ./.github/workflows/reusable-opencode-complete-gate.yml
+  opencode-complete-gate:
+    concurrency:
+      group: complete-gate-${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number || github.run_id }}
+      cancel-in-progress: false
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.actor == 'phuhl') ||
+      (github.event_name == 'pull_request' && github.event.label.name == 'auto-review') ||
+      github.event_name == 'workflow_run' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       (contains(github.event.comment.body, '/oc complete-gate') || contains(github.event.comment.body, '/opencode complete-gate')) &&
+       github.actor == 'phuhl')
+    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-complete-gate.yml@master
     secrets: inherit
 
   opencode-plan-and-implement:

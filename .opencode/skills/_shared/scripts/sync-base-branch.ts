@@ -92,7 +92,15 @@ export function syncBaseBranch(issueNumber: string): SyncResult {
   }
 
   // Update base branch
-  execSync(`git fetch origin ${base}`, { stdio: "pipe" });
+  try {
+    execSync(`git fetch origin ${base}`, { stdio: "pipe" });
+  } catch {
+    return {
+      ok: false,
+      exitCode: 3,
+      output: `Failed to fetch base branch ${base} from origin`,
+    };
+  }
 
   // Merge base into head
   try {

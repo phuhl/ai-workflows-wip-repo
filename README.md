@@ -49,16 +49,8 @@ apparts-js/ai-workflows/
 │   ├── verify-bullet-length.ts          # Checks summary bullets ≤ 200 chars
 │   └── verify-no-unresolved-comments.ts # Verifies all code-line review comments addressed
 ├── wrappers/
-│   ├── master/                 # Single wrapper that handles all triggers
+│   ├── master/                 # Master wrapper that handles all triggers
 │   │   └── opencode-master.yml
-│   └── individual/             # Separate wrappers per trigger
-│       ├── opencode.yml
-│       ├── opencode-address-review.yml
-│       ├── opencode-code-review.yml
-│       ├── opencode-complete-gate.yml
-│       ├── opencode-fix-pr.yml
-│       ├── opencode-plan-and-implement.yml
-│       └── opencode-plan.yml
 ├── opencode.json              # OpenCode config — auto-created for target repos by bootstrap
 ├── README.md
 └── USER_GUIDE.md              # Tutorial on how to use the automation
@@ -70,31 +62,15 @@ See [`USER_GUIDE.md`](USER_GUIDE.md) for a step-by-step walkthrough of the OpenC
 
 ## How target repos consume this
 
-### Option A — One master wrapper (recommended)
+### Master wrapper
 
-Copy **only** `wrappers/opencode-master.yml` into your repo's `.github/workflows/` (rename it however you like). It subscribes to every trigger and routes to the correct reusable workflow automatically.
+Copy **only** `wrappers/master/opencode-master.yml` into your repo's `.github/workflows/` (rename it however you like). It subscribes to every trigger and routes to the correct reusable workflow automatically.
 
 ```bash
 cp wrappers/master/opencode-master.yml  <target-repo>/.github/workflows/opencode.yml
 ```
 
-> **Note on permissions:** The master wrapper declares a **union** of all permissions (`contents: write`, `pull-requests: write`, `issues: write`, `checks: read`, `id-token: write`). Every routed job inherits this same broad set because GitHub Actions ignores `permissions` declared inside called reusable workflows. If you need finer-grained control per trigger, use Option B.
-
-### Option B — Individual wrappers
-
-If you prefer separate workflow files in the Actions UI, copy the individual wrappers instead:
-
-```bash
-cp wrappers/individual/opencode.yml                 <target-repo>/.github/workflows/
-cp wrappers/individual/opencode-code-review.yml     <target-repo>/.github/workflows/
-cp wrappers/individual/opencode-address-review.yml  <target-repo>/.github/workflows/
-cp wrappers/individual/opencode-complete-gate.yml   <target-repo>/.github/workflows/
-cp wrappers/individual/opencode-fix-pr.yml          <target-repo>/.github/workflows/
-cp wrappers/individual/opencode-plan-and-implement.yml <target-repo>/.github/workflows/
-cp wrappers/individual/opencode-plan.yml            <target-repo>/.github/workflows/
-```
-
-Each wrapper declares only the permissions that specific workflow needs.
+> **Note on permissions:** The master wrapper declares a **union** of all permissions (`contents: write`, `pull-requests: write`, `issues: write`, `checks: read`, `id-token: write`). Every routed job inherits this same broad set because GitHub Actions ignores `permissions` declared inside called reusable workflows.
 
 > **Important:** The `opencode-complete-gate.yml` wrapper includes a `workflow_run` trigger that listens for a specific CI workflow to complete:
 > ```yaml
