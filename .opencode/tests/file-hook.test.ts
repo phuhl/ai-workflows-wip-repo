@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
-import { FileHook } from "../../src/plugins/file-hook";
+import { FileHook } from "../plugins/file-hook";
 
 function mockShell(exitCode: number, stdout = "", stderr = "") {
   const proc: any = Promise.resolve({ exitCode, stdout, stderr });
@@ -134,7 +134,7 @@ describe("file-hook", () => {
     expect(output.output).toBe("File written.");
   });
 
-  it("skips files in .opencode/ and .ai-workflows/ directories", async () => {
+  it("skips .ai-workflows/ but allows .opencode/", async () => {
     const { $, client, logs } = setupHook();
     const hooks = await FileHook({
       $: $ as any,
@@ -142,29 +142,21 @@ describe("file-hook", () => {
       directory: "/tmp",
     });
 
-    await hooks["tool.execute.after"]?.(
-      makeInput("write", {
-        filePath: "/home/user/.opencode/plugins/file-hook.ts",
-      }),
-      makeOutput() as any,
-    );
-    await hooks["tool.execute.after"]?.(
-      makeInput("write", {
-        filePath:
-          "/home/user/.opencode/skills/_shared/scripts/post-review-reply.ts",
-      }),
-      makeOutput() as any,
-    );
-    await hooks["tool.execute.after"]?.(
-      makeInput("edit", { filePath: "/tmp/.opencode/foo.ts" }),
-      makeOutput() as any,
-    );
+    // .ai-workflows/ should be skipped
     await hooks["tool.execute.after"]?.(
       makeInput("edit", { filePath: "/tmp/.ai-workflows/bar.ts" }),
       makeOutput() as any,
     );
-
     expect(logs).toHaveLength(0);
+
+    // .opencode/tests/ should NOT be skipped (internal dev files)
+    await hooks["tool.execute.after"]?.(
+      makeInput("write", {
+        filePath: "/home/user/.opencode/tests/test.ts",
+      }),
+      makeOutput() as any,
+    );
+    expect(logs).toHaveLength(0); // $ is mocked to succeed, so no issues logged
   });
 
   it("triggers for .js, .jsx, .mjs, .cjs", async () => {

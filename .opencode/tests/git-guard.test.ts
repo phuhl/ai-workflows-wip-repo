@@ -8,7 +8,7 @@ vi.mock("node:child_process", () => ({
   execSync: mockExecSync,
 }));
 
-import { GitGuard } from "../../src/plugins/git-guard";
+import { GitGuard } from "../plugins/git-guard";
 
 function setupHook(logs: any[] = []) {
   const client = {
@@ -132,7 +132,7 @@ describe("git-guard", () => {
   it("unstages files in protected directories", async () => {
     const { client, logs } = setupHook();
     mockExecSync.mockReturnValueOnce(
-      ".ai-workflows/skills/foo/SKILL.md\n.opencode/skills/bar/SKILL.md\nsrc/app.ts\n",
+      ".ai-workflows/skills/foo/SKILL.md\nsrc/app.ts\n",
     );
 
     const hooks = await GitGuard({ client: client as any });
@@ -145,7 +145,6 @@ describe("git-guard", () => {
     expect(logs[0].body.message).toContain("Unstaged");
     expect(logs[0].body.extra.unstaged).toEqual([
       ".ai-workflows/skills/foo/SKILL.md",
-      ".opencode/skills/bar/SKILL.md",
     ]);
 
     expect(mockExecSync).toHaveBeenCalledWith(
@@ -157,22 +156,18 @@ describe("git-guard", () => {
     expect(resetCall).toBeDefined();
   });
 
-  it("unstages files in .opencode/plugins/", async () => {
+  it("unstages .env files", async () => {
     const { client, logs } = setupHook();
-    mockExecSync.mockReturnValueOnce(
-      ".opencode/plugins/custom.ts\nsrc/ok.ts\n",
-    );
+    mockExecSync.mockReturnValueOnce(".env\nsrc/ok.ts\n");
 
     const hooks = await GitGuard({ client: client as any });
     await hooks["tool.execute.after"]?.(
-      makeInput("git add .opencode/plugins/custom.ts src/ok.ts"),
+      makeInput("git add .env src/ok.ts"),
       undefined as any,
     );
 
     expect(logs).toHaveLength(1);
-    expect(logs[0].body.extra.unstaged).toEqual([
-      ".opencode/plugins/custom.ts",
-    ]);
+    expect(logs[0].body.extra.unstaged).toEqual([".env"]);
   });
 
   it("leaves non-protected files alone", async () => {
