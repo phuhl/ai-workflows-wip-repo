@@ -8,9 +8,21 @@ This repository centralizes all repository-generic AI automation so individual r
 
 ## Setup (target repos)
 
-### 1. Install the GitHub App
+### 1. Create a GitHub App
 
-Install the `ai-workflows` GitHub App on your target repository from the organization's GitHub App settings. The App provides the bot's write access (creating PRs, pushing commits, posting comments).
+You need your own GitHub App to provide the bot's write access (creating PRs, pushing commits, posting comments).
+
+1. Go to your GitHub **Settings → Developer settings → GitHub Apps → New GitHub App**.
+2. Give it a name (e.g., `my-ai-workflows`), set a homepage URL, and uncheck "Active" under Webhook (the workflows handle triggers).
+3. Under **Permissions**, set:
+   - `Contents`: Read & write
+   - `Pull requests`: Read & write
+   - `Issues`: Read & write
+   - `Checks`: Read-only
+   - `Actions`: Read-only
+4. Under **Where can this GitHub App be installed?**, choose "Only on this account" (or your organization).
+5. Click **Create GitHub App**, then generate and download a private key (`.pem` file).
+6. Install the app on your target repository: go to the app's **Install App** tab and select your repo.
 
 ### 2. Configure repository secrets
 
@@ -19,8 +31,8 @@ Go to `Settings → Secrets and variables → Actions → Secrets` and add:
 | Secret | Description |
 |--------|-------------|
 | `OPENCODE_API_KEY` | API key for the OpenCode AI service |
-| `APP_ID` | GitHub App ID (from the ai-workflows App) |
-| `APP_PRIVATE_KEY` | GitHub App private key (from the ai-workflows App) |
+| `APP_ID` | GitHub App ID (from your app's settings page) |
+| `APP_PRIVATE_KEY` | GitHub App private key (contents of the `.pem` file you downloaded) |
 
 These are required by every reusable workflow. Without them, the OpenCode workflow will fail with `startup_failure`.
 
