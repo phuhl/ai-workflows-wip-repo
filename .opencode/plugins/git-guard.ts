@@ -1,6 +1,9 @@
 import type { Plugin } from "@opencode-ai/plugin";
 import { execSync } from "node:child_process";
 
+// ".opencode/skills/", ".opencode/plugins/" are not dangerous in this
+// context. This plugin is for work within the ai-workflows repo, not
+// for the consumer repository
 const DANGEROUS_PREFIXES = [".ai-workflows/", ".env"];
 
 export const GitGuard: Plugin = async ({ client }) => {

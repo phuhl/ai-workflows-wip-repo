@@ -98,7 +98,7 @@ export const FileHook: Plugin = async ({ $, client, directory }) => {
             },
           });
         } catch {
-          console.warn("[file-hook]", filePath, issues);
+          // log endpoint unavailable — silently skip
         }
       }
     },
