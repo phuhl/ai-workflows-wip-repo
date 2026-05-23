@@ -74,8 +74,8 @@ Before attempting any fix, determine whether the implementation is actually fini
 
 2. Count unchecked subtasks in the issue body **and** in issue comments:
    ```bash
-    UNCHECKED_BODY=$(gh issue view "$ISSUE_NUM" --json body -q '.body' 2>/dev/null | grep -c '^- \[ \]' || true)
-    UNCHECKED_COMMENTS=$(gh api "repos/{owner}/{repo}/issues/${ISSUE_NUM}/comments" --jq '.[].body' 2>/dev/null | grep -c '^- \[ \]' || true)
+   UNCHECKED_BODY=$(gh issue view "$ISSUE_NUM" --json body -q '.body' 2>/dev/null | grep -c '\- \[ \]' || true)
+   UNCHECKED_COMMENTS=$(gh api "repos/{owner}/{repo}/issues/${ISSUE_NUM}/comments" --jq '.[].body' 2>/dev/null | grep -c '\- \[ \]' || true)
    UNCHECKED=$((UNCHECKED_BODY + UNCHECKED_COMMENTS))
    ```
 

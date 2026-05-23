@@ -457,7 +457,7 @@ jobs:
             for ISSUE in $ISSUE_NUMBERS; do
               BODY=$(gh issue view "$ISSUE" --repo "$REPO" --json body -q '.body' 2>/dev/null || true)
               COMMENTS=$(gh issue view "$ISSUE" --repo "$REPO" --json comments -q '.comments[].body' 2>/dev/null || true)
-              COUNT=$(echo "$BODY"$'\n'"$COMMENTS" | grep -c '^- \[ \]' || true)
+              COUNT=$(echo "$BODY"$'\n'"$COMMENTS" | grep -c '\- \[ \]' || true)
               if [ "$COUNT" -gt 0 ]; then
                 UNCHECKED=$COUNT
                 ISSUE_NUM=$ISSUE
