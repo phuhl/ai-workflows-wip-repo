@@ -132,6 +132,7 @@ Prerequisites: `vitest` and `tsx` installed (run `npm install`).
 - **Actor gating**: All workflows gate on `github.actor == 'phuhl'` (hardcoded, known temporary limitation).
 - **PR stacking**: Issue comments with "stack on #42" or "base on #42" cause `plan-and-implement` to use that PR's branch as the base.
 - **OpenCode config**: `opencode.json` sets `skills.paths` to `[".opencode/skills"]` and allows `/tmp/**` via `external_directory` permission. Target repos need this too.
+- **Tests for new files**: New scripts and plugins should include corresponding test files. Scripts in `scripts/` or `.opencode/skills/_shared/scripts/` get tests in `tests/scripts/`; plugins in `.opencode/plugins/` get tests in `.opencode/tests/`.
 
 ## Key commands
 
