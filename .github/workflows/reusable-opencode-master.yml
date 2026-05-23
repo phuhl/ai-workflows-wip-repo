@@ -8,7 +8,7 @@ on:
         default: 'phuhl'
         required: false
       BYPASS_ACTOR_CHECK:
-        type: boolean
+        type: string
         default: false
         required: false
     secrets:
