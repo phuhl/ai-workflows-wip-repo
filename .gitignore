@@ -1,3 +1,4 @@
 .opencode/do-prompt.txt
 node_modules/
 todos.org
+.env
