@@ -8,7 +8,8 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "npx tsx tests/run.ts"
+    "test": "npx tsx tests/run.ts",
+    "test:e2e": "npx tsx tests/e2e/run.ts"
   },
   "author": "",
   "license": "ISC",
