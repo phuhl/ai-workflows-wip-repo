@@ -3,7 +3,7 @@ name: deduplication-check
 description: Scan recent changes for unnecessary code duplication against the unchanged existing codebase. Flag duplications, suggest deduplications, and for judgment calls give short pro/contra reasoning.
 allowed-tools: Read, Glob, Grep, Bash, Todowrite
 context: fork
-subagent_type: general
+agent: general-purpose
 argument-hint: <from-commit>..<to-commit>
 ---
 

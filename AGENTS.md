@@ -6,17 +6,6 @@ A central repository of **OpenCode AI skills** and **reusable GitHub Actions wor
 
 Target repos copy wrapper workflow files from `wrappers/` into their own `.github/workflows/`. At CI time, `scripts/bootstrap-skills.ts` copies shared skills and plugins into the target repo's `.opencode/` (run via `npx tsx`).
 
-## Directory ownership
-
-| Directory | Purpose | Edited here? |
-|---|---|---|---|
-| `.github/workflows/` | Reusable workflows (called by target repos via `uses:`) | Yes |
-| `.opencode/skills/` | Shared AI skill definitions (Markdown + YAML frontmatter) | Yes |
-| `.opencode/skills/_shared/` | Shared references and scripts used by multiple skills | Yes |
-| `.opencode/plugins/` | Shared OpenCode plugins (TypeScript, consumed at runtime) | Yes |
-| `scripts/` | Bootstrap and verification TypeScript scripts | Yes |
-| `wrappers/` | Target-repo workflow wrappers (copied, not called directly) | Yes |
-
 ## Skill format
 
 Every skill is a directory under `.opencode/skills/<name>/` containing a `SKILL.md` with YAML frontmatter:
@@ -85,8 +74,7 @@ The bootstrap script copies plugins alongside skills. Target repos can override 
 ## Wrappers
 
 Target repos copy wrapper files from `wrappers/`:
-- **Master wrapper** (`wrappers/master/opencode-master.yml`): Single file, subscribes to all triggers. Uses a union of all permissions. Recommended.
-- **Individual wrappers** (`wrappers/individual/`): One per trigger with narrower permissions.
+- **Master wrapper** (`wrappers/master/opencode-master.yml`): Single file, subscribes to all triggers. Uses a union of all permissions.
 
 The `workflow_run` trigger in the complete-gate wrapper listens for a specific CI workflow name (default `"Run API Tests"`). Target repos **must change** this to their longest-running required status check.
 

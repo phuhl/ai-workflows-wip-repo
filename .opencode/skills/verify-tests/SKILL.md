@@ -3,7 +3,7 @@ name: verify-tests
 description: Audit test cases for completeness and correctness in the current codebase. Invoke with a commit range to focus on changed files, e.g. "/verify-tests abc123..def456". Use whenever the user asks to check, review, verify, or improve test coverage.
 allowed-tools: Read, Glob, Grep, Bash, Todowrite
 context: fork
-subagent_type: general
+agent: general-purpose
 argument-hint: <from-commit>..<to-commit>
 ---
 

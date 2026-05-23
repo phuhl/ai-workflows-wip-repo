@@ -110,9 +110,16 @@ export function checkOffSubtask(
     if (commentId) {
       const updatedBody = newBody.replace(/"/g, '\\"').replace(/\n/g, "\\n");
 
-      ghCli(
+      const patchResult = ghCli(
         `api "repos/${repo}/issues/comments/${commentId}" --method PATCH --field 'body=${updatedBody}'`,
       );
+      if (!patchResult.ok) {
+        return {
+          ok: false,
+          exitCode: 4,
+          output: `Error: failed to update comment ${commentId}`,
+        };
+      }
     }
   } else {
     // No subtasks comment exists; update the issue body directly
@@ -120,9 +127,16 @@ export function checkOffSubtask(
     if (body.includes("## Subtasks")) {
       // Update issue directly (limited scenario)
       const updatedBody = newBody.replace(/"/g, '\\"').replace(/\n/g, "\\n");
-      ghCli(
+      const patchResult = ghCli(
         `api "repos/${repo}/issues/${issueNumber}" --method PATCH --field 'body=${updatedBody}'`,
       );
+      if (!patchResult.ok) {
+        return {
+          ok: false,
+          exitCode: 4,
+          output: `Error: failed to update issue #${issueNumber}`,
+        };
+      }
     }
   }
 
