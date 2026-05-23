@@ -23,6 +23,17 @@ argument-hint: <hint>  # optional
 
 Supporting files go in `references/` subdirectories. Skill frontmatter is required.
 
+## Skill categories
+
+Skills are split into two directories:
+
+- **`.opencode/skills/`** — Skills consumed by target repos. Copied by `bootstrap-skills.ts` at CI time. These are the public workflow-facing skills.
+- **`src/skills/`** — Internal skills for the ai-workflows repo itself. NOT copied by bootstrap. These are tooling for developing and testing the workflow system (e.g., `verify-e2e`).
+
+Target repos never see internal skills. The `opencode.json` config includes both paths so the runtime loads all skills during local development.
+
+System-level skills (like `skill-creator`, `create-code-review-skill`) live in `~/.config/opencode/skills/` and are also not copied.
+
 ## Shared infrastructure
 
 Common resources used by multiple skills live under `.opencode/skills/_shared/`. Directories beginning with `_` are not treated as skills by the runtime.
