@@ -97,7 +97,7 @@ jobs:
         run: |
           PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ISSUE}-\")) | .number" 2>/dev/null || echo "")
           if [ -n "$PR_NUMBER" ]; then
-            npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$PR_NUMBER" "$ISSUE" || true
+            npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$PR_NUMBER" || true
           fi
 
       - name: Run plan-and-implement skill

@@ -340,4 +340,214 @@ describe("fetchPrContext", () => {
     expect(result.files).not.toContain("changed-files.txt");
     expect(result.files).not.toContain("code-comments.md");
   });
+
+  it("auto-detects linked issue via GraphQL", async () => {
+    const prBody = "some pr body";
+    const issueBody = "Remove all backwards-compat paths.";
+    const issueTitle = "Remove backwards compat";
+    const graphqlOutput = "42";
+
+    execSyncMock.mockImplementation((cmd: unknown) => {
+      const cmdStr = String(cmd);
+      if (cmdStr.includes("repo view")) {
+        return "test-org/test-repo";
+      }
+      if (cmdStr.includes("api graphql")) {
+        return graphqlOutput;
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("title")) {
+        return "PR Title";
+      }
+      if (
+        cmdStr.includes("pr view") &&
+        cmdStr.includes("body") &&
+        !cmdStr.includes("--json comments")
+      ) {
+        return prBody;
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("headRefName")) {
+        return "my-feature";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("baseRefName")) {
+        return "master";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("comments")) {
+        return "[]";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("reviews")) {
+        return "[]";
+      }
+      if (cmdStr.includes("pulls") && cmdStr.includes("comments")) {
+        return "[]";
+      }
+      if (cmdStr.includes("issue view") && cmdStr.includes("title")) {
+        return issueTitle;
+      }
+      if (cmdStr.includes("issue view") && cmdStr.includes("body")) {
+        return issueBody;
+      }
+      if (cmdStr.includes("issue view") && cmdStr.includes("comments")) {
+        return JSON.stringify([
+          {
+            author: "dev1",
+            body: "Agreed, we can drop old API",
+            createdAt: "2024-01-01",
+          },
+        ]);
+      }
+      if (cmdStr.includes("git diff")) {
+        return "src/foo.ts";
+      }
+      if (cmdStr.includes("git checkout")) {
+        return "";
+      }
+      return "";
+    });
+
+    existsSyncMock.mockImplementation((_p: unknown) => true);
+    readFileSyncMock.mockImplementation(
+      (_p: unknown) => "// intentional: no backwards compat\nconst x = 1;",
+    );
+
+    const { fetchPrContext } =
+      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+    const result = fetchPrContext("123");
+
+    expect(result.ok).toBe(true);
+    expect(result.exitCode).toBe(0);
+    expect(result.files).toContain("issue-body.md");
+    expect(result.files).toContain("issue-comments.json");
+  });
+
+  it("falls back to branch name when GraphQL returns no linked issues", async () => {
+    const prBody = "fix the thing";
+    const issueBody = "Please fix the thing.";
+
+    execSyncMock.mockImplementation((cmd: unknown) => {
+      const cmdStr = String(cmd);
+      if (cmdStr.includes("repo view")) {
+        return "test-org/test-repo";
+      }
+      if (cmdStr.includes("api graphql")) {
+        return "";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("title")) {
+        return "PR Title";
+      }
+      if (
+        cmdStr.includes("pr view") &&
+        cmdStr.includes("body") &&
+        !cmdStr.includes("--json comments")
+      ) {
+        return prBody;
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("headRefName")) {
+        return "99-fix-thing";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("baseRefName")) {
+        return "master";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("comments")) {
+        return "[]";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("reviews")) {
+        return "[]";
+      }
+      if (cmdStr.includes("pulls") && cmdStr.includes("comments")) {
+        return "[]";
+      }
+      if (cmdStr.includes("issue view") && cmdStr.includes("title")) {
+        return "Fix the thing";
+      }
+      if (cmdStr.includes("issue view") && cmdStr.includes("body")) {
+        return issueBody;
+      }
+      if (cmdStr.includes("issue view") && cmdStr.includes("comments")) {
+        return "[]";
+      }
+      if (cmdStr.includes("git diff")) {
+        return "src/foo.ts";
+      }
+      if (cmdStr.includes("git checkout")) {
+        return "";
+      }
+      return "";
+    });
+
+    existsSyncMock.mockImplementation((_p: unknown) => true);
+    readFileSyncMock.mockImplementation((_p: unknown) => "const x = 1;");
+
+    const { fetchPrContext } =
+      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+    const result = fetchPrContext("123");
+
+    expect(result.ok).toBe(true);
+    expect(result.files).toContain("issue-body.md");
+  });
+
+  it("falls back to PR body closes syntax when branch name has no issue prefix", async () => {
+    const prBody = "Closes #77 — this removes legacy stuff";
+    const issueBody = "Get rid of legacy module.";
+
+    execSyncMock.mockImplementation((cmd: unknown) => {
+      const cmdStr = String(cmd);
+      if (cmdStr.includes("repo view")) {
+        return "test-org/test-repo";
+      }
+      if (cmdStr.includes("api graphql")) {
+        return "";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("title")) {
+        return "PR Title";
+      }
+      if (
+        cmdStr.includes("pr view") &&
+        cmdStr.includes("body") &&
+        !cmdStr.includes("--json comments")
+      ) {
+        return prBody;
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("headRefName")) {
+        return "fix-legacy-stuff";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("baseRefName")) {
+        return "master";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("comments")) {
+        return "[]";
+      }
+      if (cmdStr.includes("pr view") && cmdStr.includes("reviews")) {
+        return "[]";
+      }
+      if (cmdStr.includes("pulls") && cmdStr.includes("comments")) {
+        return "[]";
+      }
+      if (cmdStr.includes("issue view") && cmdStr.includes("title")) {
+        return "Remove legacy";
+      }
+      if (cmdStr.includes("issue view") && cmdStr.includes("body")) {
+        return issueBody;
+      }
+      if (cmdStr.includes("issue view") && cmdStr.includes("comments")) {
+        return "[]";
+      }
+      if (cmdStr.includes("git diff")) {
+        return "src/foo.ts";
+      }
+      if (cmdStr.includes("git checkout")) {
+        return "";
+      }
+      return "";
+    });
+
+    existsSyncMock.mockImplementation((_p: unknown) => true);
+    readFileSyncMock.mockImplementation((_p: unknown) => "const x = 1;");
+
+    const { fetchPrContext } =
+      await import("../../.opencode/skills/_shared/scripts/fetch-pr-context");
+    const result = fetchPrContext("123");
+
+    expect(result.ok).toBe(true);
+    expect(result.files).toContain("issue-body.md");
+  });
 });

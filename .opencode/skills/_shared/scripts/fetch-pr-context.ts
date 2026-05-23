@@ -44,6 +44,43 @@ function getPrBaseBranch(prNumber: string): string {
   return r.ok ? r.stdout : "master";
 }
 
+function getLinkedIssue(repo: string, prNumber: string): string {
+  const [owner, name] = repo.split("/");
+  if (!owner || !name) return "";
+
+  // Try GraphQL API for closingIssuesReferences (GitHub's canonical linked-issue source)
+  const query = `query($owner:String!,$name:String!,$pr:Int!){repository(owner:$owner,name:$name){pullRequest(number:$pr){closingIssuesReferences(first:5){nodes{number}}}}}`;
+  const graphqlResult = gh(
+    `api graphql -f query='${query}' -f owner='${owner}' -f name='${name}' -F pr=${prNumber} --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[].number'`,
+  );
+  if (graphqlResult.ok && graphqlResult.stdout) {
+    const numbers = graphqlResult.stdout.split("\n").filter(Boolean);
+    if (numbers.length > 0) return numbers[0];
+  }
+
+  // Fallback: branch name convention (e.g., "42-fix-bug")
+  const headResult = gh(
+    `pr view ${prNumber} --json headRefName -q .headRefName`,
+  );
+  if (headResult.ok) {
+    const match = headResult.stdout.match(/^(\d+)/);
+    if (match) return match[1];
+  }
+
+  // Fallback: PR body keyword parsing
+  const bodyResult = gh(
+    `pr view ${prNumber} --json body -q .body --repo "${repo}"`,
+  );
+  if (bodyResult.ok) {
+    const match = bodyResult.stdout.match(
+      /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/i,
+    );
+    if (match) return match[1];
+  }
+
+  return "";
+}
+
 function extractComments(filePath: string): string[] {
   const comments: string[] = [];
   try {
@@ -234,7 +271,7 @@ export function fetchPrContext(
   }
 
   // 5. Issue body and comments
-  const effectiveIssue = issueNumber || "";
+  const effectiveIssue = issueNumber || getLinkedIssue(repo, prNumber);
   if (effectiveIssue) {
     const issueBody = gh(
       `issue view ${effectiveIssue} --json body -q .body --repo "${repo}"`,
