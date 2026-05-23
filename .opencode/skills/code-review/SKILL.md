@@ -11,11 +11,15 @@ argument-hint: <from-commit>..<to-commit>
 
 Your job is to give a thorough, actionable code review tailored to this codebase. Focus on things that actually matter — correctness, safety, consistency with established patterns — not style nits.
 
+## Before reviewing
+
+Read `.opencode/skills/_shared/references/review-context.md` and follow all its instructions. Never flag a code change that is explicitly documented as intentional in the PR description, issue discussion, or code comments.
+
 ## How to approach the review
 
 1. **Understand what changed.** Use the commit range from `$ARGUMENTS` if provided (e.g. `git diff $ARGUMENTS`). If no range is given, review the entire codebase — read all source files under `src/`.
 
-2. **Read the surrounding context.** Don't review a method in isolation — read the related source and tests to understand the established patterns before judging whether new code fits.
+2. **Read the surrounding context.** Don't review a method in isolation — read the related source and tests to understand the established patterns before judging whether new code fits. Also read code comments in the changed files — comments explaining *why* code is written a certain way document deliberate decisions that should not be flagged.
 
 3. **Apply the repo-specific checklist.** See `.opencode/skills/code-review/references/checklist.md` for what to verify for this codebase specifically. If `references/checklist.md` does not exist, proceed with a generic review focused on correctness, safety, and consistency.
 

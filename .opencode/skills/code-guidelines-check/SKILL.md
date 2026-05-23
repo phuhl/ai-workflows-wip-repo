@@ -33,6 +33,8 @@ Invoke this skill when the user asks you to:
 
 ## Important Context
 
+Read `.opencode/skills/_shared/references/review-context.md` and follow all its instructions before forming findings. Never flag a guideline violation that is explicitly documented as intentional in the PR description, issue discussion, or code comments.
+
 **Code formatting and basic style are assumed to be handled by tooling.**
 Prettier, ESLint, and the TypeScript compiler already enforce:
 - Spacing, indentation, and line breaks
@@ -124,8 +126,10 @@ conventions below.
    when it is not self-evident.
 
 6. **Acknowledge trade-offs.** If a guideline is violated for a good
-   reason (e.g., performance optimization, backward compatibility), note
-   it and suggest documenting the rationale in a comment or commit body.
+   reason (e.g., performance optimization, backward compatibility, or an
+   intentional design decision documented in the PR description, issue, or
+   code comments), do NOT flag it as a violation. Skip the finding entirely — the
+   documented rationale is sufficient.
 
 ## Important Notes
 

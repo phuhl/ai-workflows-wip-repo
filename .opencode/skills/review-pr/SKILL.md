@@ -15,14 +15,33 @@ Parse `$ARGUMENTS` as: `<pr-number>`. The calling workflow may also pass a `<com
 ## Setup
 
 1. Fetch PR metadata and head SHA.
-2. Determine diff range:
+2. Determine the associated issue number (if any) from the PR body or head ref:
+   ```bash
+   ISSUE_NUM=$(gh pr view "$ARGUMENTS" --json headRefName -q '.headRefName' | grep -oE '^[0-9]+' || true)
+   if [ -z "$ISSUE_NUM" ]; then
+     ISSUE_NUM=$(gh pr view "$ARGUMENTS" --json body -q '.body' | grep -oEi '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)[[:space:]]*#[0-9]+' | grep -oE '[0-9]+' | head -1)
+   fi
+   ```
+3. Ensure pre-fetched context files exist in `.ai-workflows/`. If they don't, fetch them:
+   ```bash
+   npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$ARGUMENTS" "${ISSUE_NUM:-}"
+   ```
+4. Read the PR description and related context to understand intent before auditing:
+   ```bash
+   cat .ai-workflows/review-context.md 2>/dev/null || cat .ai-workflows/pr-body.md 2>/dev/null || echo "No pre-fetched context available"
+   ```
+5. Determine diff range:
    ```bash
    BASE=$(git merge-base origin/master HEAD)
    RANGE="${BASE}..HEAD"
    ```
-3. Determine changed files:
+6. Determine changed files:
    ```bash
    CHANGED_FILES=$(git diff --name-only "$RANGE")
+   ```
+7. Also read `.ai-workflows/code-comments.md` if it exists — these are the developer's rationale comments in the changed files:
+   ```bash
+   cat .ai-workflows/code-comments.md 2>/dev/null || echo "No code comments file available"
    ```
 
 ## Audit
@@ -53,7 +72,13 @@ The goal is to keep the review focused on the feature at hand. Do **not** post a
    - **Discard:** style nicks, formatting preferences, naming suggestions unrelated to the change, architectural musings, or general "best practice" recommendations that do not address a concrete bug or test gap in the new code.
    - **Discard:** off-topic issues in changed files that concern code the PR did not materially alter (e.g., "this nearby function could be improved").
 
-4. **Severity priority** — if many findings survive filtering, prioritize `must-fix`, then `should-fix`. If the list is still long (> 10 inline comments), post only the `must-fix` items inline and summarize the rest in a single general comment.
+4. **Intent filter** — discard any finding that is explicitly documented as intentional:
+   - Read the PR description (`.ai-workflows/pr-body.md` or fetched above). If it explicitly states that the flagged behavior is by design, discard the finding.
+   - Read the issue description if available (`.ai-workflows/issue-body.md`). If the original ask explicitly requested the flagged behavior, discard the finding.
+   - For each finding's file, check `code-comments.md` or the file itself for comments that explain the flagged behavior as a deliberate decision ("we don't need backwards compat", "this removes legacy path", etc.). If such a comment exists and matches the flagged code, discard the finding.
+   - If intent is documented but you still believe the approach has a concrete bug or safety risk, you may keep the finding but downgrade it to a **note** and cite the documented intent.
+
+5. **Severity priority** — if many findings survive filtering, prioritize `must-fix`, then `should-fix`. If the list is still long (> 10 inline comments), post only the `must-fix` items inline and summarize the rest in a single general comment.
 
 ## Post findings
 

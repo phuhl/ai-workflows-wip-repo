@@ -44,8 +44,9 @@ Skills load these via `Read .opencode/skills/_shared/references/<name>.md` inste
 
 - **`post-write-hook.md`** — Post-write formatting behavior (prettier, eslint, tsc).
 - **`git-safety.md`** — Git safety rules (never stage protected directories).
-- **`context-summary.md`** — Launches a subagent (via Task tool) to independently read issue body, issue comments, PR body, PR comments, and review comments, then returns a concise structured summary highlighting gotchas, past decisions, and unresolved feedback. Used by implement skills (`plan-and-implement`, `fix-pr`, `resolve-pr-conflicts`) before making any code changes.
-- **`self-check.md`** — Runs the four audit skills (`code-review`, `verify-tests`, `code-guidelines-check`, `deduplication-check`) in parallel on a diff range, then iteratively fixes all `must-fix` and `should-fix` findings. Used by every code-changing skill (`plan-and-implement`, `fix-pr`, `fix-pr-ci`, `resolve-pr-conflicts`, `user-do`) after making changes, to validate the full PR before considering work done.
+- **`context-summary.md`** — Launches a subagent (via Task tool) to independently read issue body, issue comments, PR body, PR comments, and review comments, then returns a concise structured summary highlighting gotchas, past decisions, and unresolved feedback. Used by implement skills (`plan-and-implement`, `fix-pr`, `resolve-pr-conflicts`) before making any code changes. Supports reading pre-fetched files from `.ai-workflows/` when available (saves tokens).
+- **`self-check.md`** — Runs the four audit skills (`code-review`, `verify-tests`, `code-guidelines-check`, `deduplication-check`) in parallel on a diff range, then iteratively fixes all `must-fix` and `should-fix` findings. Used by every code-changing skill (`plan-and-implement`, `fix-pr`, `fix-pr-ci`, `resolve-pr-conflicts`, `user-do`) after making changes, to validate the full PR before considering work done. Before running audits, ensures context files exist in `.ai-workflows/` so audits don't flag intentional decisions.
+- **`review-context.md`** — Teaches audit skills how to read and respect developer intent from pre-fetched PR/issue context and code comments. All four audit skills load this reference before forming findings. Discards findings that contradict explicitly documented intent.
 
 ### Shared scripts (`_shared/scripts/`)
 
@@ -55,6 +56,7 @@ Skills invoke these via `npx tsx .opencode/skills/_shared/scripts/<name>.ts`:
 - **`sync-base-branch.ts`** — Finds the PR for an issue number, checks out its head branch, and merges the latest base branch. Usage: `sync-base-branch.ts <issue-number>`. Exit codes: 0=success, 1=usage error, 2=no PR found, 3=merge conflict.
 - **`check-off-subtask.ts`** — Finds the "## Subtasks" comment on an issue and checks off a checkbox. Usage: `check-off-subtask.ts <issue-number> "<subtask-text>" [repo]`. Exit codes: 0=success, 1=usage error, 2=no repo, 3=no subtasks comment found.
 - **`post-review-reply.ts`** — Posts a reply to an existing code-line review comment thread using properly-typed JSON (in_reply_to as integer). Usage: `post-review-reply.ts <pr-number> <comment-id> "<body>"`. Exit codes: 0=success, 1=usage error.
+- **`fetch-pr-context.ts`** — Pre-fetches PR body, PR comments, review comments, issue body, issue comments, changed file list, and code comments from changed files, saving them to `.ai-workflows/`. Also generates an initial `review-context.md`. Usage: `fetch-pr-context.ts <pr-number> [issue-number]`. Exit codes: 0=success, 1=usage error, 2=no PR/issue found. Run by workflows before the main `opencode` invocation so skills can read context without making their own `gh` calls.
 
 ## Skill reference files (per-repo customization)
 
@@ -113,6 +115,17 @@ Skills must **never** commit files from `.ai-workflows/`, `.opencode/skills/`, o
 
 Skills are told: "Do not run tests locally on target repositories." CI is the source of truth. Push changes and let CI verify. This avoids flaky local environments, missing test deps, or timeouts from large test suites.
 
+## Review context flow
+
+Audit skills (code-review, verify-tests, deduplication-check, code-guidelines-check) must never flag code changes that are explicitly documented as intentional. The context flow ensures this:
+
+1. **Workflows pre-fetch context**: Before the main `opencode run`, the workflow calls `fetch-pr-context.ts <pr-number> [issue-number]` which saves PR body, issue body, review comments, changed file list, and code comments to `.ai-workflows/`.
+2. **Skills read context**: All four audit skills load the `review-context.md` shared reference, which instructs them to check `.ai-workflows/review-context.md` and related files before forming judgments.
+3. **Discard contradictory findings**: If the PR description, issue, or a code comment in the changed file explicitly documents the flagged behavior as intentional, the finding is discarded. A finding may only be kept as a "note" if a concrete bug or safety issue contradicts the stated intent.
+4. **review-pr intent-filter**: As a safety net, `review-pr` applies an additional intent filter after receiving audit outputs, cross-referencing each finding against the PR description and code comments.
+
+This mirrors the `context-summary.md` pattern used by implement skills, but for the review direction: instead of "read context before implementing," it's "read context before judging." Both now support pre-fetched `.ai-workflows/` files to save tokens.
+
 ## Verification scripts
 
 This repo has two validation scripts used during CI:
@@ -141,6 +154,7 @@ Prerequisites: `vitest` and `tsx` installed (run `npm install`).
 - **Commit style**: Conventional commits, lowercase prefix (`fix:`, `feat:`, `refactor:`).
 - **Keep AGENTS.md in sync**: Any change that adds, removes, or renames skills, scripts, plugins, workflows, or changes their behavior must update AGENTS.md accordingly.
 - **Keep docs in sync**: Any change that adds, removes, or renames a `/oc` command, workflow trigger, or user-facing behavior must update `README.md` and `USER_GUIDE.md` to reflect it.
+- **Respect developer intent**: Audit skills must read PR/issue context (from pre-fetched `.ai-workflows/` files or directly) before forming findings. Any code change that is explicitly documented as intentional — in the PR description, issue discussion, or code comments — must NOT be flagged. This prevents review skills from flagging deliberate decisions (e.g., removing backwards-compat code) based on outdated assumptions.
 - **Actor gating**: All workflows gate on `github.actor == 'phuhl'` (hardcoded, known temporary limitation).
 - **PR stacking**: Issue comments with "stack on #42" or "base on #42" cause `plan-and-implement` to use that PR's branch as the base.
 - **OpenCode config**: `opencode.json` sets `skills.paths` to `[".opencode/skills"]` and allows `/tmp/**` via `external_directory` permission. Target repos need this too.

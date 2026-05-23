@@ -8,6 +8,21 @@ Before making any code changes, launch a subagent to independently gather and su
 - A focused subagent reads everything and distills only what matters for implementation
 - Previous review feedback, failed attempts, and design decisions in comments are surfaced so you don't repeat mistakes
 
+## Step 0 — Check for pre-fetched context
+
+Before calling `gh`, check if a previous step (e.g., the workflow's `fetch-pr-context.ts` script) has already saved the data to `.ai-workflows/`. If these files exist, read them directly instead of calling `gh` — it saves tokens and is faster:
+
+```
+if [ -f .ai-workflows/pr-body.md ]; then echo "pre-fetched pr-body available"; fi
+if [ -f .ai-workflows/pr-comments.json ]; then echo "pre-fetched pr-comments available"; fi
+if [ -f .ai-workflows/pr-review-comments.json ]; then echo "pre-fetched review comments available"; fi
+if [ -f .ai-workflows/issue-body.md ]; then echo "pre-fetched issue-body available"; fi
+if [ -f .ai-workflows/issue-comments.json ]; then echo "pre-fetched issue-comments available"; fi
+if [ -f .ai-workflows/review-context.md ]; then echo "pre-fetched review-context available"; fi
+```
+
+If all are available, read them with Read tool and skip `gh` calls in Step 2. If any are missing, proceed with the `gh` commands below for those specific items.
+
 ## Step 1 — Determine the parameters
 
 You need the issue number, PR number (if it exists), and repo slug. Use these bash commands:
@@ -37,7 +52,9 @@ Use the **Task** tool with a `general` subagent type. The prompt must include th
 
 Gather full context for issue #<ISSUE_NUM> (PR #<PR_NUMBER> if it exists, otherwise say "no PR yet") in repo <REPO>.
 
-Use `gh` commands to fetch data directly — do not rely on the calling context for content.
+First, check if the calling context already has pre-fetched files in `.ai-workflows/`. If files like `.ai-workflows/pr-body.md`, `.ai-workflows/pr-comments.json`, `.ai-workflows/pr-review-comments.json`, `.ai-workflows/issue-body.md`, `.ai-workflows/issue-comments.json` exist, read them with the Read tool directly. Only use `gh` commands for items that are NOT already available as pre-fetched files.
+
+If you must use `gh` commands, use these:
 
 1. **Issue body**: `gh issue view <ISSUE_NUM> --json title,body`
 2. **Issue comments**: `gh issue view <ISSUE_NUM> --json comments -q '.comments[] | {author: .author.login, body, createdAt}'`

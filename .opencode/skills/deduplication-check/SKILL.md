@@ -11,6 +11,10 @@ argument-hint: <from-commit>..<to-commit>
 
 Your job is to scan the changes in `$ARGUMENTS` (a git commit range like `abc123..def456`) for unnecessary code duplication, including duplication of patterns that already exist elsewhere in the unchanged codebase.
 
+## Before checking
+
+Read `.opencode/skills/_shared/references/review-context.md` and follow all its instructions. Never flag code that is explicitly documented as intentionally duplicated or kept separate for a documented reason.
+
 ## How to approach the check
 
 1. **Identify what changed.** Use the commit range from `$ARGUMENTS`:
@@ -86,5 +90,6 @@ Omit a section entirely if it has no findings. Every must-fix and should-fix fin
 
 ## Principles
 - Do not flag necessary repetition (boilerplate, configuration, type definitions, standard patterns).
+- Do not flag duplication when the PR description, issue, or a code comment explicitly documents that two pieces of code are intentionally kept separate for different use cases, backward-compat boundaries, or ownership domains.
 - When suggesting a shared function extraction, show where it would live and how both call sites would use it.
 - For judgment calls, keep pro/contra to exactly one line each. Do not argue for one side — just present the facts and let the caller decide.

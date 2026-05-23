@@ -13,6 +13,23 @@ Set by the caller before loading this reference:
 
 ## Steps
 
+### 0. Ensure review context is available
+
+Before running audits, ensure the audit skills can access the PR/issue context so they don't flag intentional decisions:
+
+```bash
+PR_NUM=$(echo "$REF" | grep -oE '[0-9]+' | head -1)
+if [ -n "$PR_NUM" ] && [ ! -f .ai-workflows/review-context.md ]; then
+  ISSUE_NUM=$(gh pr view "$PR_NUM" --json headRefName -q '.headRefName' | grep -oE '^[0-9]+' || true)
+  if [ -z "$ISSUE_NUM" ]; then
+    ISSUE_NUM=$(gh pr view "$PR_NUM" --json body -q '.body' | grep -oEi '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)[[:space:]]*#[0-9]+' | grep -oE '[0-9]+' | head -1)
+  fi
+  npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$PR_NUM" "${ISSUE_NUM:-}" || true
+fi
+```
+
+The audit skills (`code-review`, `deduplication-check`, `code-guidelines-check`, `verify-tests`) automatically read context from `.ai-workflows/` via the `review-context.md` shared reference. This step ensures the files exist.
+
 ### 1. Run the four audit skills in parallel
 
 Launch all four at the same time using the Skill tool:
