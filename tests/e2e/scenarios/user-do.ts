@@ -4,6 +4,7 @@ import {
   commentOnIssue,
   getIssueComments,
   closeIssue,
+  safeCleanup,
 } from "../engine";
 import { waitFor, assert, isBot } from "../utils";
 
@@ -79,11 +80,10 @@ export const userDo: ScenarioSpec = {
   },
   cleanup: async (ctx) => {
     if (ctx.issueNumber) {
-      try {
-        await closeIssue(ctx.repo, ctx.issueNumber!);
-      } catch {
-        /* ignore */
-      }
+      await safeCleanup(
+        () => closeIssue(ctx.repo, ctx.issueNumber!),
+        "close issue",
+      );
     }
   },
 };

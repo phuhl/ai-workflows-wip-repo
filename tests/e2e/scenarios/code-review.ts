@@ -10,6 +10,7 @@ import {
   closePr,
   deleteBranch,
   getPr,
+  safeCleanup,
 } from "../engine";
 import { waitFor, assert, isBot } from "../utils";
 
@@ -80,24 +81,17 @@ export const codeReview: ScenarioSpec = {
   },
   cleanup: async (ctx) => {
     if (ctx.prNumber) {
-      try {
-        const pr = await getPr(ctx.repo, ctx.prNumber);
+      await safeCleanup(async () => {
+        const pr = await getPr(ctx.repo, ctx.prNumber!);
         await deleteBranch(ctx.repo, pr.headRefName);
-      } catch {
-        /* ignore */
-      }
-      try {
-        await closePr(ctx.repo, ctx.prNumber!);
-      } catch {
-        /* ignore */
-      }
+      }, "delete branch");
+      await safeCleanup(() => closePr(ctx.repo, ctx.prNumber!), "close PR");
     }
     if (ctx.issueNumber) {
-      try {
-        await closeIssue(ctx.repo, ctx.issueNumber!);
-      } catch {
-        /* ignore */
-      }
+      await safeCleanup(
+        () => closeIssue(ctx.repo, ctx.issueNumber!),
+        "close issue",
+      );
     }
   },
 };

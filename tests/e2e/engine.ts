@@ -1,12 +1,13 @@
 import { execSync } from "node:child_process";
 import type { Comment, PrInfo, WorkflowRun, CheckRun } from "./types";
 
-function gh(args: string, opts?: { cwd?: string }): string {
+function gh(args: string, opts?: { cwd?: string; stdin?: string }): string {
   try {
     const result = execSync(`gh ${args}`, {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
       ...(opts?.cwd ? { cwd: opts.cwd } : {}),
+      ...(opts?.stdin !== undefined ? { input: opts.stdin } : {}),
     });
     return result.trim();
   } catch (e: unknown) {
@@ -22,8 +23,8 @@ function gh(args: string, opts?: { cwd?: string }): string {
   }
 }
 
-function ghJson<T>(args: string): T {
-  const output = gh(args);
+function ghJson<T>(args: string, opts?: { cwd?: string; stdin?: string }): T {
+  const output = gh(args, opts);
   return JSON.parse(output) as T;
 }
 
@@ -33,7 +34,8 @@ export function createIssue(
   body: string,
 ): { number: number; url: string } {
   const result = ghJson<{ number: number; html_url: string }>(
-    `api "repos/${repo}/issues" -f title="${title}" -f body="${body.replace(/"/g, '\\"')}"`,
+    `api repos/${repo}/issues --input -`,
+    { stdin: JSON.stringify({ title, body }) },
   );
   return { number: result.number, url: result.html_url };
 }
@@ -60,9 +62,9 @@ export function commentOnIssue(
   issueNumber: number,
   body: string,
 ): void {
-  gh(
-    `issue comment ${issueNumber} --repo ${repo} --body "${body.replace(/"/g, '\\"')}"`,
-  );
+  gh(`api repos/${repo}/issues/${issueNumber}/comments --input -`, {
+    stdin: JSON.stringify({ body }),
+  });
 }
 
 export function getIssueComments(repo: string, issueNumber: number): Comment[] {
@@ -163,11 +165,7 @@ export function getCheckRuns(repo: string, ref: string): CheckRun[] {
 }
 
 export function deleteBranch(repo: string, branch: string): void {
-  try {
-    gh(`api "repos/${repo}/git/refs/heads/${branch}" -X DELETE`);
-  } catch {
-    // branch may not exist
-  }
+  gh(`api repos/${repo}/git/refs/heads/${branch} -X DELETE`);
 }
 
 export function closeIssue(repo: string, issueNumber: number): void {
@@ -181,6 +179,19 @@ export function closePr(repo: string, prNumber: number): void {
 export function getRepoLabels(repo: string): string[] {
   const result = gh(`label list --repo ${repo} --json name -q '.[].name'`);
   return result ? result.split("\n").filter(Boolean) : [];
+}
+
+export async function safeCleanup(
+  fn: () => Promise<void>,
+  label: string,
+): Promise<void> {
+  try {
+    await fn();
+  } catch (e) {
+    console.error(
+      `  ⚠ Cleanup '${label}' failed: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
 }
 
 export function getDefaultBranch(repo: string): string {
