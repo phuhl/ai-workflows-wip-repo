@@ -70,7 +70,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.issue.number || github.event.inputs.pr_number }}
         run: |
-          npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$PR_NUMBER" || true
+          ISSUE_NUM=$(gh pr view "$PR_NUMBER" --json headRefName -q '.headRefName' | grep -oE '^[0-9]+' || true)
+          if [ -z "$ISSUE_NUM" ]; then
+            ISSUE_NUM=$(gh pr view "$PR_NUMBER" --json body -q '.body' | grep -oEi '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)[[:space:]]*#[0-9]+' | grep -oE '[0-9]+' | head -1)
+          fi
+          npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$PR_NUMBER" "${ISSUE_NUM:-}" || true
 
       - name: Run review-pr skill
         env:
