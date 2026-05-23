@@ -128,11 +128,12 @@ Run before pushing changes to catch regressions early:
 npm test                 # or: npx tsx tests/run.ts
 ```
 
-The suite has three layers:
+The suite has four layers:
 
 1. **Structural validation** (`tests/validate/`) — Checks skill frontmatter, reference integrity, tool permission requirements (detects if skills reference tools they haven't declared in `allowed-tools`), wrapper→workflow consistency, and YAML syntax across all `.yml` and `SKILL.md` files (vitest tests).
-2. **Script tests** (`tests/scripts/`) — Vitest tests for `bootstrap-skills.ts`, `verify-bullet-length.ts`, `verify-no-unresolved-comments.ts`, `format-and-commit.ts`, `sync-base-branch.ts`, and `check-off-subtask.ts` (mocked `gh` CLI via vitest mocks/fixtures).
+2. **Script tests** (`tests/scripts/`) — Vitest tests for `bootstrap-skills.ts`, `verify-bullet-length.ts`, `verify-no-unresolved-comments.ts`, `format-and-commit.ts`, `sync-base-branch.ts`, `check-off-subtask.ts`, `fetch-pr-context.ts`, and `post-review-reply.ts` (mocked `gh` CLI via vitest mocks/fixtures).
 3. **Plugin unit tests** — Vitest tests for `file-hook.ts` and `git-guard.ts` (run from `.opencode/`).
+4. **E2E tests** (`tests/e2e/`) — Integration tests that run against a dedicated dummy repository. A test runner script uses the `gh` CLI to simulate real user interactions (creating issues, labeling them, commenting `/oc` commands) and verifies that the workflows and skills execute correctly end-to-end. See the E2E test section below for setup and usage.
 
 Prerequisites: `vitest` and `tsx` installed (run `npm install`).
 
@@ -143,10 +144,89 @@ Prerequisites: `vitest` and `tsx` installed (run `npm install`).
 - **Keep AGENTS.md in sync**: Any change that adds, removes, or renames skills, scripts, plugins, workflows, or changes their behavior must update AGENTS.md accordingly.
 - **Keep docs in sync**: Any change that adds, removes, or renames a `/oc` command, workflow trigger, or user-facing behavior must update `README.md` and `USER_GUIDE.md` to reflect it.
 - **Respect developer intent**: Audit skills must read PR/issue context (from pre-fetched `.ai-workflows/` files or directly) before forming findings. Any code change that is explicitly documented as intentional — in the PR description, issue discussion, or code comments — must NOT be flagged. This prevents review skills from flagging deliberate decisions (e.g., removing backwards-compat code) based on outdated assumptions.
-- **Actor gating**: All workflows gate on `github.actor == 'phuhl'` (hardcoded, known temporary limitation).
+- **Actor gating**: Workflows gate on allowed actors via configurable `ALLOWED_ACTORS` input (default `'phuhl'`). Gating can be bypassed per-repo via the `BYPASS_ACTOR_CHECK` input. Target repos configure `vars.ALLOWED_ACTORS` (comma-separated GitHub usernames) and optionally `vars.BYPASS_ACTOR_CHECK` (boolean) as repository variables. Private repos automatically bypass actor checks (`BYPASS_ACTOR_CHECK` defaults to `github.event.repository.private` in wrappers).
 - **PR stacking**: Issue comments with "stack on #42" or "base on #42" cause `plan-and-implement` to use that PR's branch as the base.
 - **OpenCode config**: `opencode.json` sets `skills.paths` to `[".opencode/skills"]` and allows `/tmp/**` via `external_directory` permission. Target repos need this too.
 - **Tests for new files**: New scripts and plugins should include corresponding test files. Scripts in `scripts/` or `.opencode/skills/_shared/scripts/` get tests in `tests/scripts/`; plugins in `.opencode/plugins/` get tests in `.opencode/tests/`.
+
+## E2E test suite (this repo only)
+
+The E2E test suite verifies end-to-end workflow behavior by simulating real user actions against a dedicated dummy GitHub repository.
+
+### Setup
+
+1. **Create a dummy target repo** (e.g., `phuhl/ai-workflows-test-repo`) with the following content:
+   - `.github/workflows/opencode-master.yml` — wrapper calling `reusable-opencode-master.yml`
+   - `.github/workflows/run-tests.yml` — CI workflow named "Run All Tests"
+   - `opencode.json` — OpenCode config
+   - `package.json` with `vitest` and `tsx`
+   - Dummy source code (`src/`) and tests (`tests/`)
+   - Branch `master` (not `main`)
+2. **Install the GitHub App** from `apparts-js/ai-workflows` on the dummy repo.
+3. **Configure repo variables**: Set `ALLOWED_ACTORS` and optionally `BYPASS_ACTOR_CHECK` in the dummy repo's `Settings > Secrets and variables > Actions > Variables`.
+4. **Create `.env`** in this repo's root:
+   ```
+   GITHUB_TOKEN=<tester-pat-with-read-write-access>
+   TEST_REPO=phuhl/ai-workflows-test-repo
+   ```
+5. The `.env` file is gitignored and never committed.
+
+### Running
+
+```bash
+# Setup only (comes from npm install)
+npm install
+
+# List available scenarios
+npm run test:e2e -- --list
+
+# Run a single scenario
+npm run test:e2e -- --repo phuhl/ai-workflows-test-repo --scenario happy-path
+
+# Run all scenarios
+npm run test:e2e -- --repo phuhl/ai-workflows-test-repo --all
+
+# Run specific scenarios
+npm run test:e2e -- --repo phuhl/ai-workflows-test-repo --scenario happy-path --scenario plan-only
+```
+
+### Scenarios
+
+| Scenario | Description |
+|----------|-------------|
+| `happy-path` | Issue labeled `opencode` → PR created → bot-authored code |
+| `plan-only` | `/oc plan` on issue → plan comment, no PR created |
+| `fix-pr` | `/oc fix-pr` on PR → bot responds |
+| `code-review` | `/oc code-review` on PR → review comments |
+| `user-do` | `/oc do <prompt>` → bot executes custom prompt |
+| `autofix-exhausted` | Failing CI → 3 autofix attempts → exhausted label |
+| `complete-gate` | `auto-review` label → gate processes PR |
+
+### Architecture
+
+```
+tests/e2e/
+├── run.ts                  # CLI entrypoint
+├── engine.ts               # GitHub API abstraction via gh CLI
+├── utils.ts                # Polling, retry, assertions
+├── types.ts                # Shared types
+└── scenarios/
+    ├── index.ts            # Scenario registry
+    ├── happy-path.ts
+    ├── plan-only.ts
+    ├── fix-pr.ts
+    ├── code-review.ts
+    ├── user-do.ts
+    ├── autofix-exhausted.ts
+    └── complete-gate.ts
+```
+
+The test runner uses the `gh` CLI with the tester's PAT. Each scenario:
+1. **Setup** — Creates issues, PRs, or other preconditions
+2. **Trigger** — Performs the action (label, comment, etc.)
+3. **Wait** — Polls with backoff for expected outcomes
+4. **Assertions** — Verifies structural properties (bot authored, labels correct, no errors, etc.)
+5. **Cleanup** — Closes issues, deletes branches, etc.
 
 ## Key commands
 
@@ -159,6 +239,9 @@ npx vitest run
 
 # Run only plugin tests
 cd .opencode && npx vitest run
+
+# Run E2E tests (requires .env and test repo setup)
+npm run test:e2e -- --repo <owner/repo> --all
 
 # Verify bullet length for a PR summary
 npx tsx scripts/verify-bullet-length.ts "bullet 1" "bullet 2"
