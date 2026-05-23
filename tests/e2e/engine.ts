@@ -77,7 +77,7 @@ export function getPrForIssue(
 ): PrInfo | null {
   try {
     const result = gh(
-      `pr list --repo ${repo} --search "${issueNumber}" --state all --json number,title,body,state,draft,headRefName,baseRefName,labels,author,mergeable --limit 1`,
+      `pr list --repo ${repo} --search "${issueNumber}" --state all --json number,title,body,state,isDraft,headRefName,baseRefName,labels,author,mergeable --limit 1`,
     );
     if (!result || result === "[]") return null;
     return JSON.parse(result)[0] as PrInfo;
@@ -88,7 +88,7 @@ export function getPrForIssue(
 
 export function getPr(repo: string, prNumber: number): PrInfo {
   return ghJson<PrInfo>(
-    `pr view ${prNumber} --repo ${repo} --json number,title,body,state,draft,headRefName,baseRefName,labels,author,mergeable`,
+    `pr view ${prNumber} --repo ${repo} --json number,title,body,state,isDraft,headRefName,baseRefName,labels,author,mergeable`,
   );
 }
 

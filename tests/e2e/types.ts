@@ -44,11 +44,11 @@ export interface PrInfo {
   title: string;
   body: string;
   state: string;
-  draft: boolean;
+  isDraft: boolean;
   headRefName: string;
   baseRefName: string;
-  labels: string[];
-  author: string;
+  labels: { name: string }[];
+  author: { login: string; isBot: boolean };
   mergeable: string;
 }
 

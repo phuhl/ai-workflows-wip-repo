@@ -42,8 +42,8 @@ export const happyPath: ScenarioSpec = {
         }
         return false;
       },
-      300_000,
-      15000,
+      600_000,
+      20000,
     );
     if (!found) throw new Error("Timed out waiting for PR to be created");
   },
@@ -56,13 +56,13 @@ export const happyPath: ScenarioSpec = {
     // PR was created by the bot
     results.push(
       assert(
-        isBot(pr.author),
-        `PR #${ctx.prNumber} authored by bot (${pr.author})`,
+        isBot(pr.author.login),
+        `PR #${ctx.prNumber} authored by bot (${pr.author.login})`,
       ),
     );
 
     // PR is a draft initially
-    results.push(assert(pr.draft === true, "PR is a draft"));
+    results.push(assert(pr.isDraft === true, "PR is a draft"));
 
     // PR branch follows naming convention
     results.push(

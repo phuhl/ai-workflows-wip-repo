@@ -126,5 +126,9 @@ export function printSummary(results: ScenarioResult[]): void {
 }
 
 export function isBot(author: string): boolean {
-  return author === "opencode[bot]" || author.includes("[bot]");
+  return (
+    author === "opencode[bot]" ||
+    author.includes("[bot]") ||
+    author.includes("/app")
+  );
 }
