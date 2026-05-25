@@ -146,6 +146,19 @@ export function getWorkflowRuns(repo: string, branch: string): WorkflowRun[] {
   }
 }
 
+export function getWorkflowRun(
+  repo: string,
+  runId: number,
+): WorkflowRun | null {
+  try {
+    return ghJson<WorkflowRun>(
+      `run view ${runId} --repo ${repo} --json id,name,status,conclusion`,
+    );
+  } catch {
+    return null;
+  }
+}
+
 export function getWorkflowRunLog(repo: string, runId: number): string {
   try {
     return gh(`run view ${runId} --repo ${repo} --log`, { cwd: undefined });
