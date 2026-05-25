@@ -182,7 +182,7 @@ export function getRepoLabels(repo: string): string[] {
 }
 
 export async function safeCleanup(
-  fn: () => Promise<void>,
+  fn: () => void | Promise<void>,
   label: string,
 ): Promise<void> {
   try {

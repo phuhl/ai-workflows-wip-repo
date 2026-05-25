@@ -30,7 +30,7 @@ export const codeReview: ScenarioSpec = {
     labelIssue(ctx.repo, issue.number, "opencode");
   },
   trigger: async (ctx) => {
-    await waitFor(
+    const found = await waitFor(
       async () => {
         const pr = await getPrForIssue(ctx.repo, ctx.issueNumber!);
         if (pr) {
@@ -42,6 +42,7 @@ export const codeReview: ScenarioSpec = {
       300_000,
       15000,
     );
+    if (!found) throw new Error("Timed out waiting for PR to be created");
 
     commentOnIssue(ctx.repo, ctx.prNumber!, "/oc code-review");
   },

@@ -23,6 +23,7 @@ jobs:
   opencode-dispatcher:
     if: |
       (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
+      github.event.comment.user.type != 'Bot' &&
       (contains(github.event.comment.body, ' /oc') ||
        startsWith(github.event.comment.body, '/oc') ||
        contains(github.event.comment.body, ' /opencode') ||
@@ -42,6 +43,7 @@ jobs:
   opencode-do:
     if: |
       (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
+      github.event.comment.user.type != 'Bot' &&
        (contains(github.event.comment.body, '/oc do') || contains(github.event.comment.body, '/opencode do')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-do.yml@master
@@ -54,6 +56,7 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
       (github.event_name == 'issue_comment' &&
+       github.event.comment.user.type != 'Bot' &&
        !github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc plan') || contains(github.event.comment.body, '/opencode plan')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
@@ -67,6 +70,7 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
       (github.event_name == 'issue_comment' &&
+       github.event.comment.user.type != 'Bot' &&
        github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc fix-pr') || contains(github.event.comment.body, '/opencode fix-pr')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
@@ -80,6 +84,7 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
       (github.event_name == 'issue_comment' &&
+       github.event.comment.user.type != 'Bot' &&
        github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc code-review') || contains(github.event.comment.body, '/opencode code-review')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
@@ -96,6 +101,7 @@ jobs:
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.event.review.user.login)) &&
        (github.event.review.state == 'changes_requested' || github.event.review.state == 'commented')) ||
       (github.event_name == 'issue_comment' &&
+       github.event.comment.user.type != 'Bot' &&
        github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc address-review') || contains(github.event.comment.body, '/opencode address-review')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
@@ -114,6 +120,7 @@ jobs:
       (github.event_name == 'pull_request' && github.event.label.name == 'auto-review') ||
       github.event_name == 'workflow_run' ||
       (github.event_name == 'issue_comment' &&
+       github.event.comment.user.type != 'Bot' &&
        github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc complete-gate') || contains(github.event.comment.body, '/opencode complete-gate')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))

@@ -1,6 +1,7 @@
 import type { ScenarioSpec, E2EContext } from "../types";
 import {
   createIssue,
+  labelIssue,
   addPrLabel,
   removePrLabel,
   getPrLabels,
@@ -26,9 +27,10 @@ export const autofixExhausted: ScenarioSpec = {
       "Add a test in tests/broken.test.ts that always fails: expect(1).toBe(2). This should cause CI to fail.",
     );
     ctx.issueNumber = issue.number;
+    labelIssue(ctx.repo, issue.number, "opencode");
   },
   trigger: async (ctx) => {
-    await waitFor(
+    const found = await waitFor(
       async () => {
         const pr = await getPrForIssue(ctx.repo, ctx.issueNumber!);
         if (pr) {
@@ -40,6 +42,7 @@ export const autofixExhausted: ScenarioSpec = {
       300_000,
       15000,
     );
+    if (!found) throw new Error("Timed out waiting for PR to be created");
 
     addPrLabel(ctx.repo, ctx.prNumber!, "auto-review");
   },

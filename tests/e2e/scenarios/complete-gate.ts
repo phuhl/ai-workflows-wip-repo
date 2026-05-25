@@ -1,6 +1,7 @@
 import type { ScenarioSpec, E2EContext } from "../types";
 import {
   createIssue,
+  labelIssue,
   addPrLabel,
   getPrComments,
   getPrLabels,
@@ -25,9 +26,10 @@ export const completeGate: ScenarioSpec = {
       "Add a JSDoc comment above the `add` function in src/add.ts explaining what it does.",
     );
     ctx.issueNumber = issue.number;
+    labelIssue(ctx.repo, issue.number, "opencode");
   },
   trigger: async (ctx) => {
-    await waitFor(
+    const found = await waitFor(
       async () => {
         const pr = await getPrForIssue(ctx.repo, ctx.issueNumber!);
         if (pr) {
@@ -39,6 +41,7 @@ export const completeGate: ScenarioSpec = {
       300_000,
       15000,
     );
+    if (!found) throw new Error("Timed out waiting for PR to be created");
 
     addPrLabel(ctx.repo, ctx.prNumber!, "auto-review");
   },
