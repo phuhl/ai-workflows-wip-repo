@@ -10,7 +10,7 @@ Address every unresolved comment on the PR — both code-line review comments AN
 This script reads the pre-fetched PR context, determines the bot username, filters to unresolved comments (threads where the last reply is not from the bot, PR comments without a bot reply, excluding status/progress messages), and checks for user triage (thumbs-down reactions on bot comments).
 
 ```bash
-npx tsx .opencode/skills/fix-pr/references/scripts/build-todo-list.ts
+npx tsx .opencode/skills/_shared/scripts/build-review-todo-list.ts
 ```
 
 The output is JSON:

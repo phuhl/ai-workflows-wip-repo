@@ -10,35 +10,31 @@ Run the same audits that `review-pr` runs and fix any `must-fix` findings before
 
 ### 0. Address PR code-line review comments (add to your todo list)
 
-Before running audits, ensure every code-line review comment on this PR is handled. Track this with the todowrite tool:
+Before running audits, ensure every code-line review comment on this PR is handled.
 
-1. Detect the bot username and fetch all code-line review comments:
+1. Run the shared todo-list builder to get unresolved review comments:
    ```bash
-   BOT_USER=$(gh api /user -q '.login' 2>/dev/null || echo "opencode[bot]")
-   PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName | startswith(\"${ARGUMENTS}-\")) | .number")
-   gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --jq '.[] | {id, path, line, body, in_reply_to_id, user: .user.login}'
+   npx tsx .opencode/skills/_shared/scripts/build-review-todo-list.ts
    ```
 
-2. Filter to keep only **thread-starter** comments where `in_reply_to_id` is null and `user` is not `"$BOT_USER"`. These are the comments from human reviewers that need your attention.
-
-3. For each such comment:
+2. For each item in the `todos` array (skip `triaged: true` items):
    - **If the suggestion is valid** — implement the code change. Format, commit, push:
      ```bash
-     npx tsx src/skills/_shared/scripts/format-and-commit.ts "fix: address review comment — <description> (#${ARGUMENTS})" <specific-files>
+     npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: address review comment — <description> (#${ARGUMENTS})" <specific-files>
      ```
-   - **If the suggestion is not appropriate** — reply explaining why the current code is correct or intentional:
+   - **If the suggestion is not appropriate** — reply explaining why:
      ```bash
-     npx tsx src/skills/_shared/scripts/post-review-reply.ts "$PR_NUMBER" <comment_id> "<explanation>"
+     npx tsx .opencode/skills/_shared/scripts/post-review-reply.ts "$PR_NUMBER" <comment_id> "<explanation>"
      ```
    - **If the comment is a question** — reply with your answer.
 
-4. After all are addressed, run the verification script:
+3. After all are addressed, run the verification script:
    ```bash
    npx tsx .ai-workflows/scripts/verify-no-unresolved-comments.ts "$PR_NUMBER" "$REPO"
    ```
    If it reports unresolved comments, address them and re-verify until clean.
 
-5. Check off the todo item for review comment resolution before proceeding.
+4. Check off the todo item for review comment resolution before proceeding.
 
 ### 1. Find PR and merge base
    ```bash

@@ -7,9 +7,7 @@ Read the failed CI logs, understand the error, fix the root cause, and push.
 
 1. **Read the failed CI logs first.** Do not touch code until you understand what failed:
    ```bash
-   BRANCH=$(gh pr view <pr-number> --json headRefName -q '.headRefName')
-   RUN_ID=$(gh run list --branch "$BRANCH" --status failure --limit 1 --json databaseId -q '.[0].databaseId')
-   gh run view "$RUN_ID" --log-failed
+   npx tsx .opencode/skills/_shared/scripts/get-failed-ci-log.ts <pr-number>
    ```
    Read the errors carefully. Understand *what* failed and *why* before making any changes.
 
@@ -17,7 +15,7 @@ Read the failed CI logs, understand the error, fix the root cause, and push.
 
 3. Format and commit:
    ```bash
-   npx tsx src/skills/_shared/scripts/format-and-commit.ts "fix: resolve CI failure – <description> (#<issue_number>)" <specific-files>
+   npx tsx .opencode/skills/_shared/scripts/format-and-commit.ts "fix: resolve CI failure – <description> (#<issue_number>)" <specific-files>
    ```
 
 4. If the `fix-pr-ci` skill is available, you may invoke it for deeper diagnostics:

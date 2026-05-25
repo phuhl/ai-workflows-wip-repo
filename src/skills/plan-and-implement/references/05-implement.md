@@ -19,14 +19,13 @@ Complete the remaining unchecked subtasks: "Implement logic to pass tests" and "
    If merge conflicts occur, invoke `resolve-pr-conflicts` and stop.
 
 2. **Address pending code-line review comments before implementing** (add to your todo list):
-   - Detect the bot username and fetch all PR code-line review comments:
+   - Run the shared todo-list builder to get unresolved review comments:
      ```bash
-     BOT_USER=$(gh api /user -q '.login' 2>/dev/null || echo "opencode[bot]")
-     gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --jq '.[] | {id, path, line, body, in_reply_to_id, user: .user.login}'
+     npx tsx .opencode/skills/_shared/scripts/build-review-todo-list.ts
      ```
-   - For each thread-starter (`in_reply_to_id` is null, `user` is not `"$BOT_USER"`) that has no replies:
+   - For each item in the `todos` array (skip `triaged: true` items):
      - If the suggestion is valid → implement, commit, push.
-      - If not appropriate → reply with explanation via `npx tsx src/skills/_shared/scripts/post-review-reply.ts "$PR_NUMBER" <id> "<explanation>"`.
+     - If not appropriate → reply with explanation via `npx tsx .opencode/skills/_shared/scripts/post-review-reply.ts "$PR_NUMBER" <id> "<explanation>"`.
    - Verify after addressing:
      ```bash
      npx tsx .ai-workflows/scripts/verify-no-unresolved-comments.ts "$PR_NUMBER" "$REPO"
