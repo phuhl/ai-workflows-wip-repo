@@ -225,6 +225,66 @@ export async function safeCleanup(
   }
 }
 
+function ensureLabelExists(repo: string, label: string, color: string): void {
+  try {
+    gh(`api repos/${repo}/labels --input -`, {
+      stdin: JSON.stringify({ name: label, color }),
+    });
+  } catch {
+    // label already exists or can't be created; ignore
+  }
+}
+
+export function addResultLabel(
+  repo: string,
+  issueNumber: number,
+  passed: boolean,
+): void {
+  const label = passed ? "passing" : "failing";
+  const color = passed ? "0e8a16" : "b60205";
+  ensureLabelExists(repo, label, color);
+  try {
+    addPrLabel(repo, issueNumber, label);
+  } catch {
+    // retry after ensuring label exists
+    ensureLabelExists(repo, label, color);
+    try {
+      addPrLabel(repo, issueNumber, label);
+    } catch {
+      // silently ignore
+    }
+  }
+}
+
+export function postResultComment(
+  repo: string,
+  issueNumber: number,
+  scenarioName: string,
+  passed: boolean,
+  error?: string,
+  failedAssertions?: { message: string }[],
+): void {
+  if (passed) return;
+
+  let body = `## E2E Test Result: FAILED\n\n`;
+  body += `**Scenario**: \`${scenarioName}\`\n\n`;
+  if (error) {
+    body += `**Error**: ${error}\n\n`;
+  }
+  if (failedAssertions && failedAssertions.length > 0) {
+    body += `**Failed assertions**:\n`;
+    for (const a of failedAssertions) {
+      body += `- ${a.message}\n`;
+    }
+  }
+
+  try {
+    commentOnIssue(repo, issueNumber, body);
+  } catch {
+    // silently ignore
+  }
+}
+
 export interface FileChange {
   path: string;
   content: string;

@@ -5,7 +5,12 @@ import type {
   AssertionResult,
   WorkflowRun,
 } from "./types";
-import { getWorkflowRuns, getRunJobs } from "./engine";
+import {
+  getWorkflowRuns,
+  getRunJobs,
+  addResultLabel,
+  postResultComment,
+} from "./engine";
 
 export function logHeader(text: string): void {
   const line = "=".repeat(60);
@@ -182,6 +187,20 @@ export async function runScenario(
     }
 
     const passed = assertions.every((a) => a.passed);
+    const targetNumber = ctx.prNumber ?? ctx.issueNumber;
+    if (targetNumber) {
+      addResultLabel(ctx.repo, targetNumber, passed);
+      if (!passed) {
+        postResultComment(
+          ctx.repo,
+          targetNumber,
+          scenario.name,
+          passed,
+          undefined,
+          assertions.filter((a) => !a.passed),
+        );
+      }
+    }
     return {
       name: scenario.name,
       passed,
@@ -189,12 +208,18 @@ export async function runScenario(
       durationMs: Date.now() - start,
     };
   } catch (e) {
-    logFail(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    const eMsg = e instanceof Error ? e.message : String(e);
+    logFail(`Error: ${eMsg}`);
+    const targetNumber = ctx.prNumber ?? ctx.issueNumber;
+    if (targetNumber) {
+      addResultLabel(ctx.repo, targetNumber, false);
+      postResultComment(ctx.repo, targetNumber, scenario.name, false, eMsg);
+    }
     return {
       name: scenario.name,
       passed: false,
       assertions: [],
-      error: e instanceof Error ? e.message : String(e),
+      error: eMsg,
       durationMs: Date.now() - start,
     };
   } finally {
