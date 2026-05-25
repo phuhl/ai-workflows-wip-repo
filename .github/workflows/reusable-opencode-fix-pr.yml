@@ -105,6 +105,10 @@ jobs:
         run: |
           npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$PR_NUMBER" || true
 
+      - name: Save pre-fix-pr HEAD SHA
+        run: |
+          git rev-parse HEAD > /tmp/pre-fixpr-sha
+
       - name: Run fix-pr skill
         id: fix_pr
         continue-on-error: true
@@ -127,10 +131,15 @@ jobs:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}
           PR_NUMBER: ${{ github.event.issue.number || github.event.inputs.pr_number }}
           REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
         run: |
           ERROR_TAIL=$(tail -n 20 /tmp/opencode-fix-pr.log 2>/dev/null || echo "No log captured")
           BODY=$(printf '%b' "❌ **OpenCode fix-pr encountered an error**\n\n\`\`\`\n${ERROR_TAIL}\n\`\`\`\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
-          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY" || true
+          if [ -n "$COMMENT_ID" ]; then
+            gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY" || true
+          else
+            gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" || true
+          fi
 
       - name: Re-add auto-review label
         if: always()
@@ -155,7 +164,17 @@ jobs:
           else
             STATUS="⚠️ **OpenCode fix-pr ended**"
           fi
-          BODY=$(printf '%b' "${STATUS}\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
+
+          FIXPR_COMMITS=""
+          if [ -f /tmp/pre-fixpr-sha ]; then
+            FIXPR_COMMITS=$(git log --format='- %s' "$(cat /tmp/pre-fixpr-sha)"..HEAD --no-merges 2>/dev/null | head -5 || echo "")
+          fi
+
+          if [ -n "$FIXPR_COMMITS" ]; then
+            BODY=$(printf '%b' "${STATUS}\n\nChanges made:\n${FIXPR_COMMITS}\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
+          else
+            BODY=$(printf '%b' "${STATUS}\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
+          fi
           gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" \
             -X PATCH \
             -f body="${BODY}" || true
