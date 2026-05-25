@@ -9,5 +9,11 @@
     "noEmit": true,
     "resolveJsonModule": true
   },
-  "include": ["scripts/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
+  "include": [
+    "scripts/**/*.ts",
+    "src/skills/_shared/scripts/**/*.ts",
+    "src/skills/*/scripts/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts"
+  ]
 }

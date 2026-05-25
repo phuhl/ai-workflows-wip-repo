@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test": "npx tsx tests/run.ts",
-    "test:e2e": "npx tsx tests/e2e/run.ts"
+    "test:e2e": "npx tsx tests/e2e/run.ts",
+    "typecheck": "tsc --noEmit"
   },
   "author": "",
   "license": "ISC",
@@ -24,6 +25,7 @@
     "jiti": "^2.7.0",
     "tsx": "^4.19.0",
     "typescript-eslint": "^8.59.4",
+    "typescript": "^5.8.0",
     "vitest": "^3.0.0"
   }
 }
