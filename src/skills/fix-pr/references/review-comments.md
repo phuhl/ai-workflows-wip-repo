@@ -5,85 +5,64 @@ Address every unresolved comment on the PR — both code-line review comments AN
 
 ## Steps
 
-### 0. Read pre-fetched context
+### 1. Run the todo-list builder
 
-The workflow has pre-fetched all PR context into `.ai-workflows/`. **Do not make `gh api` calls** — read from these files instead:
+This script reads the pre-fetched PR context, determines the bot username, filters to unresolved comments (threads where the last reply is not from the bot, PR comments without a bot reply, excluding status/progress messages), and checks for user triage (thumbs-down reactions on bot comments).
 
-- Read `.ai-workflows/pr-review-comments.json` — code-line review comments
-- Read `.ai-workflows/pr-comments.json` — main-thread PR comments
-
-The review comments JSON has this structure per entry:
-```json
-{ "id": <number>, "path": "<file>", "line": <number>, "body": "<text>",
-  "in_reply_to_id": <number|null>, "user": "<login>", "created_at": "<iso>" }
+```bash
+npx tsx .opencode/skills/fix-pr/references/scripts/build-todo-list.ts
 ```
 
-### 1. Determine bot username
-
-The GH_TOKEN is the GitHub App token, so `gh api /user` returns the bot.
-```bash
-BOT_USER=$(gh api /user -q '.login' 2>/dev/null || echo "opencode[bot]")
-echo "Bot user: ${BOT_USER}"
+The output is JSON:
+```json
+{
+  "bot_user": "<string>",
+  "todos": [
+    {
+      "type": "review",
+      "id": <number>,
+      "text": "Review comment from <user> on <file>:<line> — \"<body>\"",
+      "author": "<user>",
+      "path": "<file>",
+      "line": <number>,
+      "triaged": <true|false>
+    },
+    {
+      "type": "pr_comment",
+      "id": <number>,
+      "text": "PR comment from <user> — \"<body>\"",
+      "author": "<user>",
+      "triaged": false
+    }
+  ]
+}
 ```
 
 ### 2. Build the todo list
 
-Use the `todowrite` tool to create ONE todo item per comment that needs attention. Do not group or batch them — each comment must be its own item.
-
-**Code-line review comments** — include if ALL of these are true:
-- `in_reply_to_id` is null (thread starter, not a reply)
-- The **last** reply in the thread is NOT from `"$BOT_USER"`. To determine this: find all comments where `in_reply_to_id` == this comment's `id`, sort them by `id` ascending, and check the `user.login` of the last one. If the last reply is from `"$BOT_USER"`, the thread is already handled — skip it. If the last reply is from anyone else (including a human who replied after the bot), the comment needs attention.
-
-**Main-thread PR comments** — include if:
-- Does NOT already have a reply from `"$BOT_USER"`
-- Is NOT a workflow progress/status update (content matches patterns like `**OpenCode**`, `✅`, `❌`, `⚠️` combined with "finished", "failed", "error", or "started")
-
-Format each todo item as:
-```
-Review comment from <user> on <file>:<line> — "<truncated body>"
-```
-or for main-thread comments:
-```
-PR comment from <user> — "<truncated body>"
-```
+Use the `todowrite` tool to create ONE todo item per entry in the `todos` array. Use the `text` field as the todo content. Mark items with `triaged: true` as `cancelled` immediately — the user already rejected the bot's suggestion.
 
 ### 3. Process each todo item
 
 Set the current item to `in_progress`, handle it, then mark it `completed`. Work through them one at a time.
 
-**For each comment, first check for user triage on bot comments:**
+**For each comment, decide how to respond:**
 
-If the comment author is `"$BOT_USER"`, fetch reactions:
-```bash
-gh api "repos/{owner}/{repo}/pulls/comments/<comment_id>/reactions" --jq '[.[] | select(.content == "-1") | {user: .user.login, content}]'
-```
-If there is a thumbs-down (`-1` / `THUMBS_DOWN`) reaction from a human user (not `"$BOT_USER"`):
-- **Reply and skip.** The user has manually triaged this bot suggestion as not applicable:
-  ```bash
-  npx tsx src/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "User triaged this suggestion out — skipping."
-  ```
-- Mark the todo item `completed` — no code changes needed.
-
-If no user triage (no thumbs-down, or comment is from a human), proceed to address the comment:
-
-- **Code change requested (suggestion is valid)** — implement the change, then reply to the comment so it is marked as resolved:
+- **Code change requested (suggestion is valid)** — implement the change, then commit and reply:
    ```bash
    npx tsx src/skills/_shared/scripts/format-and-commit.ts "fix: address review comment – <description>" <specific-files>
+   npx tsx src/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "Addressed in commit: <description>"
    ```
-  Then reply to the comment thread:
-  ```bash
-  npx tsx src/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "Addressed in commit: <description>"
-  ```
 
 - **Push-back (suggestion is not appropriate, current code is intentional)** — reply explaining why:
-  For code-line comments:
-  ```bash
-  npx tsx src/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "<explanation of why the current code is correct or intentional>"
-  ```
-  For main-thread comments:
-  ```bash
-  gh pr comment <pr-number> --body "<explanation>"
-  ```
+   For code-line comments:
+   ```bash
+   npx tsx src/skills/_shared/scripts/post-review-reply.ts <pr-number> <comment_id> "<explanation>"
+   ```
+   For main-thread comments:
+   ```bash
+   gh pr comment <pr-number> --body "<explanation>"
+   ```
 
 - **Question** — reply with your answer (use the same reply methods as push-back).
 
