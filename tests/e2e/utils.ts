@@ -3,7 +3,9 @@ import type {
   ScenarioSpec,
   E2EContext,
   AssertionResult,
+  WorkflowRun,
 } from "./types";
+import { getWorkflowRuns } from "./engine";
 
 export function logHeader(text: string): void {
   const line = "=".repeat(60);
@@ -41,6 +43,47 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export async function verifyRunStarted(
+  repo: string,
+  branch: string,
+  after: Date,
+): Promise<WorkflowRun> {
+  const timeoutMs = 120_000;
+
+  while (Date.now() - after.getTime() < timeoutMs) {
+    const runs = await getWorkflowRuns(repo, branch);
+    const newRuns = runs.filter(
+      (r) =>
+        r.name === "OpenCode" &&
+        new Date(r.createdAt).getTime() > after.getTime(),
+    );
+
+    if (newRuns.length > 0) {
+      const latest = newRuns[0];
+
+      if (latest.status === "completed" && latest.conclusion === "failure") {
+        throw new Error(
+          `Workflow run ${latest.id} failed at startup (no runner assigned, missing secrets, or invalid workflow). Check the run for details.`,
+        );
+      }
+
+      if (
+        latest.status === "queued" ||
+        latest.status === "in_progress" ||
+        latest.status === "waiting"
+      ) {
+        return latest;
+      }
+    }
+
+    await sleep(10000);
+  }
+
+  throw new Error(
+    `No workflow run "OpenCode" started on branch "${branch}" within ${timeoutMs}ms. The trigger may not have fired.`,
+  );
+}
+
 export async function runScenario(
   scenario: ScenarioSpec,
   ctx: E2EContext,
@@ -54,9 +97,14 @@ export async function runScenario(
     await scenario.setup(ctx);
     logPass("Setup complete");
 
+    const triggerTime = new Date();
+
     logStep("Running trigger...");
     await scenario.trigger(ctx);
     logPass("Trigger complete");
+
+    logStep("Verifying workflow started...");
+    const startedRun = await verifyRunStarted(ctx.repo, "master", triggerTime);
 
     logStep(`Waiting (timeout: ${scenario.timeoutMs}ms)...`);
     await scenario.wait(ctx);
