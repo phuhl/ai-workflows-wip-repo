@@ -17,6 +17,7 @@ export interface ScenarioSpec {
   name: string;
   description: string;
   timeoutMs: number;
+  checkJob?: string;
   setup: (ctx: E2EContext) => Promise<void>;
   trigger: (ctx: E2EContext) => Promise<void>;
   wait: (ctx: E2EContext) => Promise<void>;
@@ -53,7 +54,7 @@ export interface PrInfo {
 }
 
 export interface WorkflowRun {
-  id: number;
+  databaseId: number;
   name: string;
   status: string;
   conclusion: string | null;

@@ -15,6 +15,7 @@ export const fixPr: ScenarioSpec = {
   description:
     "Comment /oc fix-pr on a PR triggers the fix-pr skill and bot responds",
   timeoutMs: 600_000,
+  checkJob: "fix-pr",
   setup: async (ctx) => {
     const branchName = `e2e/fix-pr-${Date.now()}`;
     ctx.branchName = branchName;

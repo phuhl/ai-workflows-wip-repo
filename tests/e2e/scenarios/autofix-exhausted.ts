@@ -16,6 +16,7 @@ export const autofixExhausted: ScenarioSpec = {
   description:
     "PR with failing CI gets auto-review → complete-gate tries autofix up to 3 times → exhausts",
   timeoutMs: 1_800_000, // 30 minutes
+  checkJob: "complete-gate",
   setup: async (ctx) => {
     const branchName = `e2e/autofix-exhausted-${Date.now()}`;
     ctx.branchName = branchName;

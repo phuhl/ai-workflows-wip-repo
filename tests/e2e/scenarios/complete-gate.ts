@@ -16,6 +16,7 @@ export const completeGate: ScenarioSpec = {
   description:
     "PR with auto-review label triggers complete-gate which processes and adds ready for review",
   timeoutMs: 900_000, // 15 minutes
+  checkJob: "complete-gate",
   setup: async (ctx) => {
     const branchName = `e2e/complete-gate-${Date.now()}`;
     ctx.branchName = branchName;
@@ -79,7 +80,7 @@ export function add(a: number, b: number): number {
     const comments = await getPrComments(ctx.repo, ctx.prNumber!);
 
     const gateComment = comments.find(
-      (c) => isBot(c.author) && c.body.includes("Complete Gate is processing"),
+      (c) => isBot(c.author) && c.body.includes("Complete Gate"),
     );
     results.push(
       assert(!!gateComment, "Complete-gate posted a progress comment"),

@@ -19,6 +19,7 @@ export const happyPath: ScenarioSpec = {
   description:
     "Issue labeled opencode → plan-and-implement → PR with bot-authored code → ready for review",
   timeoutMs: 600_000, // 10 minutes
+  checkJob: "plan-and-implement",
   setup: async (ctx) => {
     const issue = createIssue(
       ctx.repo,

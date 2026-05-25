@@ -15,6 +15,7 @@ export const codeReview: ScenarioSpec = {
   description:
     "Comment /oc code-review on a PR triggers review-pr and posts review comments",
   timeoutMs: 600_000,
+  checkJob: "code-review",
   setup: async (ctx) => {
     const branchName = `e2e/code-review-${Date.now()}`;
     ctx.branchName = branchName;

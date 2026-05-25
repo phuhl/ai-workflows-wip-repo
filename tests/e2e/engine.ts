@@ -125,7 +125,9 @@ export function addPrLabel(
   prNumber: number,
   label: string,
 ): void {
-  gh(`pr edit ${prNumber} --repo ${repo} --add-label "${label}"`);
+  gh(`api repos/${repo}/issues/${prNumber}/labels --input -`, {
+    stdin: JSON.stringify([label]),
+  });
 }
 
 export function removePrLabel(
@@ -139,7 +141,7 @@ export function removePrLabel(
 export function getWorkflowRuns(repo: string, branch: string): WorkflowRun[] {
   try {
     return ghJson<WorkflowRun[]>(
-      `run list --repo ${repo} --branch "${branch}" --json id,name,status,conclusion,headBranch,createdAt --limit 20`,
+      `run list --repo ${repo} --branch "${branch}" --json databaseId,name,status,conclusion,headBranch,createdAt --limit 20`,
     );
   } catch {
     return [];
@@ -152,10 +154,23 @@ export function getWorkflowRun(
 ): WorkflowRun | null {
   try {
     return ghJson<WorkflowRun>(
-      `run view ${runId} --repo ${repo} --json id,name,status,conclusion`,
+      `run view ${runId} --repo ${repo} --json databaseId,name,status,conclusion`,
     );
   } catch {
     return null;
+  }
+}
+
+export function getRunJobs(
+  repo: string,
+  runId: number,
+): Array<{ name: string; conclusion: string | null }> {
+  try {
+    return ghJson<Array<{ name: string; conclusion: string | null }>>(
+      `run view ${runId} --repo ${repo} --json jobs --jq '.jobs | map({name, conclusion})'`,
+    );
+  } catch {
+    return [];
   }
 }
 

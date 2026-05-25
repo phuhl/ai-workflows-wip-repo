@@ -5,7 +5,7 @@ import type {
   AssertionResult,
   WorkflowRun,
 } from "./types";
-import { getWorkflowRuns, getWorkflowRun } from "./engine";
+import { getWorkflowRuns, getRunJobs } from "./engine";
 
 export function logHeader(text: string): void {
   const line = "=".repeat(60);
@@ -47,6 +47,7 @@ export async function verifyRunStarted(
   repo: string,
   branch: string,
   after: Date,
+  checkJob?: string,
 ): Promise<WorkflowRun> {
   const timeoutMs = 240_000;
 
@@ -58,17 +59,30 @@ export async function verifyRunStarted(
         new Date(r.createdAt).getTime() > after.getTime(),
     );
 
-    if (newRuns.length > 0) {
-      const latest = newRuns[0];
-
+    for (const latest of newRuns) {
       if (
         latest.status === "completed" &&
         (latest.conclusion === "failure" ||
           latest.conclusion === "startup_failure")
       ) {
         throw new Error(
-          `Workflow run ${latest.id} failed at startup (conclusion: ${latest.conclusion}). Check the run for details.`,
+          `Workflow run ${latest.databaseId} failed at startup (conclusion: ${latest.conclusion}). Check the run for details.`,
         );
+      }
+
+      if (
+        latest.status === "completed" &&
+        (latest.conclusion === "skipped" || latest.conclusion === "cancelled")
+      ) {
+        continue;
+      }
+
+      if (checkJob) {
+        const jobs = await getRunJobs(repo, latest.databaseId);
+        const targetJob = jobs.find((j) => j.name.includes(checkJob));
+        if (!targetJob || targetJob.conclusion === "skipped") {
+          continue;
+        }
       }
 
       return latest;
@@ -102,9 +116,14 @@ export async function runScenario(
     logPass("Trigger complete");
 
     logStep("Verifying workflow started...");
-    const startedRun = await verifyRunStarted(ctx.repo, "master", triggerTime);
+    const startedRun = await verifyRunStarted(
+      ctx.repo,
+      "master",
+      triggerTime,
+      scenario.checkJob,
+    );
     logPass(
-      `Workflow run ${startedRun.id} started (status: ${startedRun.status})`,
+      `Workflow run ${startedRun.databaseId} started (status: ${startedRun.status})`,
     );
 
     let workflowConclusion: string | null = null;
@@ -117,10 +136,21 @@ export async function runScenario(
     const pollPromise = (async () => {
       while (true) {
         await sleep(60_000);
-        const run = await getWorkflowRun(ctx.repo, startedRun.id);
-        if (!run) continue;
-        if (run.status === "completed") {
-          workflowConclusion = run.conclusion;
+        const runs = await getWorkflowRuns(ctx.repo, "master");
+        const relevantRuns = runs.filter(
+          (r) =>
+            r.name === "OpenCode" &&
+            new Date(r.createdAt).getTime() > triggerTime.getTime() &&
+            !(
+              r.status === "completed" &&
+              (r.conclusion === "skipped" || r.conclusion === "cancelled")
+            ),
+        );
+        if (relevantRuns.length === 0) continue;
+
+        const latest = relevantRuns[0];
+        if (latest.status === "completed" && latest.conclusion !== "skipped") {
+          workflowConclusion = latest.conclusion;
           return "workflow" as const;
         }
       }
@@ -131,11 +161,11 @@ export async function runScenario(
     if (winner === "workflow") {
       if (workflowConclusion === "failure") {
         throw new Error(
-          `Workflow run ${startedRun.id} finished with conclusion "${workflowConclusion}" before wait completed.`,
+          `Workflow run ${startedRun.databaseId} finished with conclusion "${workflowConclusion}" before wait completed.`,
         );
       }
       logPass(
-        `Workflow run ${startedRun.id} completed (${workflowConclusion}) — skipping remaining wait.`,
+        `Workflow run ${startedRun.databaseId} completed (${workflowConclusion}) — skipping remaining wait.`,
       );
     } else {
       logPass("Wait complete");
