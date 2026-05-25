@@ -5,7 +5,20 @@ Address every unresolved comment on the PR — both code-line review comments AN
 
 ## Steps
 
-### 0. Detect the bot username
+### 0. Read pre-fetched context
+
+The workflow has pre-fetched all PR context into `.ai-workflows/`. **Do not make `gh api` calls** — read from these files instead:
+
+- Read `.ai-workflows/pr-review-comments.json` — code-line review comments
+- Read `.ai-workflows/pr-comments.json` — main-thread PR comments
+
+The review comments JSON has this structure per entry:
+```json
+{ "id": <number>, "path": "<file>", "line": <number>, "body": "<text>",
+  "in_reply_to_id": <number|null>, "user": "<login>", "created_at": "<iso>" }
+```
+
+### 1. Determine bot username
 
 The GH_TOKEN is the GitHub App token, so `gh api /user` returns the bot.
 ```bash
@@ -13,34 +26,7 @@ BOT_USER=$(gh api /user -q '.login' 2>/dev/null || echo "opencode[bot]")
 echo "Bot user: ${BOT_USER}"
 ```
 
-### 1. Fetch all comments
-
-Fetch code-line review comments (save to a temp file):
-```bash
-gh api "repos/{owner}/{repo}/pulls/<pr-number>/comments" --jq '[.[] | {id, path, line, body, in_reply_to_id, user: .user.login, created_at}]' > /tmp/review_comments.json
-```
-
-Fetch main-thread PR comments (not review comments):
-```bash
-gh pr view <pr-number> --json comments -q '.comments[] | {id, body, author: .author.login, created_at}' > /tmp/pr_comments.json
-```
-
-### 2. Check if there are any comments to address
-
-Before building the todo list, check whether any review comments exist at all. If ALL of the following are empty, **stop here with a brief message — do not fabricate changes**:
-
-- No code-line review comments on the PR
-- No main-thread PR comments from humans that need a reply
-
-If there are no comments to address, post a short comment and exit:
-
-```bash
-gh pr comment <pr-number> --body "✅ **OpenCode fix-pr finished** — no unresolved review comments found. Nothing to address."
-```
-
-Do NOT run self-check audits. Do NOT post a summary of "changes made." Stop immediately.
-
-### 3. Build the todo list
+### 2. Build the todo list
 
 Use the `todowrite` tool to create ONE todo item per comment that needs attention. Do not group or batch them — each comment must be its own item.
 
@@ -61,7 +47,7 @@ or for main-thread comments:
 PR comment from <user> — "<truncated body>"
 ```
 
-### 4. Process each todo item
+### 3. Process each todo item
 
 Set the current item to `in_progress`, handle it, then mark it `completed`. Work through them one at a time.
 
@@ -101,29 +87,22 @@ If no user triage (no thumbs-down, or comment is from a human), proceed to addre
 
 - **Question** — reply with your answer (use the same reply methods as push-back).
 
-### 5. Verify
+### 4. Verify
 
 After all todo items are completed, run the verification script:
 ```bash
 npx tsx .ai-workflows/scripts/verify-no-unresolved-comments.ts <pr-number> "{owner}/{repo}"
 ```
-If it reports unresolved comments, add them as new todo items and address them. **When re-processing a comment from the verification stage, you MUST read the full thread — not just the original comment body.** Fetch all replies to understand the human follow-up context:
+If it reports unresolved comments, add them as new todo items and address them. Re-read `.ai-workflows/pr-review-comments.json` to understand the full thread context — use `in_reply_to_id` to trace the thread chain. **Base your action on the most recent human reply in the thread**, not just the original comment. For every comment addressed in the verification pass, you MUST post a reply explaining what action was taken (and why), just as in step 3.
 
-```bash
-# Read the full thread for comment <id>
-gh api "repos/{owner}/{repo}/pulls/comments" --jq ".[] | select(.id == <id> or .in_reply_to_id == <id>) | {id, user: .user.login, body}" | jq -s 'sort_by(.id)'
-```
-
-Base your action on the **most recent human reply in the thread**, not just the original comment. For every comment addressed in the verification pass, you MUST post a reply explaining what action was taken (and why), just as in step 3.
-
-### 6. Post summary
+### 5. Post summary
 
 ```bash
 gh pr comment <pr-number> --body "All review comments addressed. Changes made:
 - <bullet list of what was done>"
 ```
 
-### 7. Run self-check audits
+### 6. Run self-check audits
 
 After all comments are addressed and the summary is posted, run self-check audits on the full PR diff:
 
