@@ -37,8 +37,6 @@ jobs:
     uses: phuhl/ai-workflows-wip-repo/.github/workflows/reusable-opencode.yml@master
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-      APP_ID: ${{ secrets.APP_ID }}
-      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
