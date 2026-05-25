@@ -303,7 +303,7 @@ jobs:
           BODY=$(printf '🤖 **OpenCode Complete Gate** — merge conflicts persist after 3 resolution attempts. Manual intervention required.\n\n[Run %s](https://github.com/%s/actions/runs/%s)' "${{ github.run_id }}" "$REPO" "${{ github.run_id }}")
           gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
 
-      - name: Post exhaustion warning (conflicts)
+      - name: Add autofix-exhausted label (conflicts)
         if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted == 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}
@@ -311,7 +311,6 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "autofix-exhausted"
-          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "⚠️ Autofix exhausted after 3 attempts (conflict resolution). Manual intervention required."
 
       - name: Update progress comment — waiting for CI
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.validate.outputs.should_run == 'true'
@@ -531,6 +530,11 @@ jobs:
           BODY=$(printf '🤖 **OpenCode Complete Gate** — CI is failing and implementation is incomplete. Running plan-and-implement for issue #%s...\n\n[Run %s](https://github.com/%s/actions/runs/%s)' "$ISSUE_NUM" "${{ github.run_id }}" "$REPO" "${{ github.run_id }}")
           gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
 
+      - name: Save pre-plan-and-implement HEAD SHA
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'false'
+        run: |
+          git rev-parse HEAD > /tmp/pre-pai-sha
+
       - name: Run plan-and-implement skill (CI failing, incomplete)
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'false'
         env:
@@ -539,7 +543,26 @@ jobs:
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: max
         run: |
-          opencode run --model opencode-go/deepseek-v4-pro "Load the plan-and-implement skill and run it for issue #${{ steps.completeness.outputs.issue_number }}"
+          opencode run --model opencode-go/deepseek-v4-pro "Load the plan-and-implement skill and run it for issue #${{ steps.completeness.outputs.issue_number }}" 2>&1 | tee /tmp/opencode-pai-gate.log
+
+      - name: Update progress comment — plan-and-implement completed
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'false'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+          ISSUE_NUM: ${{ steps.completeness.outputs.issue_number }}
+        run: |
+          if [ -f /tmp/pre-pai-sha ]; then
+            PAI_COMMITS=$(git log --format='- %s' "$(cat /tmp/pre-pai-sha)"..HEAD --no-merges 2>/dev/null | head -5 || echo "")
+          fi
+          if [ -n "$PAI_COMMITS" ]; then
+            CHANGES=$(printf 'Plan-and-implement for issue #%s made these changes:\n%s' "$ISSUE_NUM" "$PAI_COMMITS")
+          else
+            CHANGES=$(printf 'Plan-and-implement for issue #%s completed — no new commits.' "$ISSUE_NUM")
+          fi
+          BODY=$(printf '🤖 **OpenCode Complete Gate** — CI is failing. %s\n\n[Run %s](https://github.com/%s/actions/runs/%s)' "$CHANGES" "${{ github.run_id }}" "$REPO" "${{ github.run_id }}")
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
 
       - name: Update progress comment — fix-pr
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'true'
@@ -552,6 +575,11 @@ jobs:
           BODY=$(printf '🤖 **OpenCode Complete Gate** — CI is failing. Running fix-pr (attempt %s of 3)...\n\n[Run %s](https://github.com/%s/actions/runs/%s)' "$ATTEMPT" "${{ github.run_id }}" "$REPO" "${{ github.run_id }}")
           gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
 
+      - name: Save pre-fix-pr HEAD SHA
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'true'
+        run: |
+          git rev-parse HEAD > /tmp/pre-fixpr-sha
+
       - name: Run fix-pr skill (CI failing, complete)
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'true'
         env:
@@ -560,7 +588,26 @@ jobs:
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: max
         run: |
-          opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ steps.meta.outputs.pr_number }} with context ci-failing"
+          opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ steps.meta.outputs.pr_number }} with context ci-failing" 2>&1 | tee /tmp/opencode-fix-pr-gate.log
+
+      - name: Update progress comment — fix-pr completed
+        if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
+        run: |
+          ATTEMPT=$(( ${{ steps.attempts.outputs.count }} + 1 ))
+          if [ -f /tmp/pre-fixpr-sha ]; then
+            FIXPR_COMMITS=$(git log --format='- %s' "$(cat /tmp/pre-fixpr-sha)"..HEAD --no-merges 2>/dev/null | head -5 || echo "")
+          fi
+          if [ -n "$FIXPR_COMMITS" ]; then
+            DETAILS=$(printf 'CI is failing. fix-pr (attempt %s) made these changes:\n%s' "$ATTEMPT" "$FIXPR_COMMITS")
+          else
+            DETAILS=$(printf 'CI is failing. fix-pr (attempt %s) completed — no new commits.' "$ATTEMPT")
+          fi
+          BODY=$(printf '🤖 **OpenCode Complete Gate** — %s\n\n[Run %s](https://github.com/%s/actions/runs/%s)' "$DETAILS" "${{ github.run_id }}" "$REPO" "${{ github.run_id }}")
+          gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
 
       - name: Record autofix attempt (CI failing, complete)
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'true'
@@ -596,7 +643,7 @@ jobs:
           BODY=$(printf '🤖 **OpenCode Complete Gate** — CI is failing after 3 autofix attempts. Manual intervention required.\n\n[Run %s](https://github.com/%s/actions/runs/%s)' "${{ github.run_id }}" "$REPO" "${{ github.run_id }}")
           gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
 
-      - name: Post exhaustion warning (CI failing)
+      - name: Add autofix-exhausted label (CI failing)
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted == 'true' && steps.validate.outputs.should_run == 'true'
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}
@@ -604,7 +651,6 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "autofix-exhausted"
-          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "⚠️ Autofix exhausted after 3 attempts (CI failing). Manual intervention required."
 
       - name: Update progress comment — review-pr
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'passing' && steps.validate.outputs.should_run == 'true'
@@ -703,12 +749,28 @@ jobs:
             if [ "$EXHAUSTED" == "true" ]; then
               DETAILS="CI is failing. Autofix exhausted after 3 attempts. Manual intervention required."
             elif [ "$IMPL_COMPLETE" == "false" ]; then
-              DETAILS="CI is failing and implementation is incomplete. Triggered plan-and-implement for issue #${ISSUE_NUM}."
+              if [ -f /tmp/pre-pai-sha ]; then
+                PAI_COMMITS=$(git log --format='- %s' "$(cat /tmp/pre-pai-sha)"..HEAD --no-merges 2>/dev/null | head -5 || echo "")
+                if [ -n "$PAI_COMMITS" ]; then
+                  DETAILS=$(printf 'CI is failing and implementation is incomplete. Plan-and-implement for issue #%s made these changes:\n%s' "$ISSUE_NUM" "$PAI_COMMITS")
+                else
+                  DETAILS="CI is failing and implementation is incomplete. Plan-and-implement triggered for issue #${ISSUE_NUM}."
+                fi
+              else
+                DETAILS="CI is failing and implementation is incomplete. Plan-and-implement triggered for issue #${ISSUE_NUM}."
+              fi
+            elif [ -f /tmp/pre-fixpr-sha ]; then
+              FIXPR_COMMITS=$(git log --format='- %s' "$(cat /tmp/pre-fixpr-sha)"..HEAD --no-merges 2>/dev/null | head -5 || echo "")
+              if [ -n "$FIXPR_COMMITS" ]; then
+                DETAILS=$(printf 'CI is failing. fix-pr (attempt %s) made these changes:\n%s' "${{ steps.attempts.outputs.count }}" "$FIXPR_COMMITS")
+              else
+                DETAILS="CI is failing. fix-pr (attempt ${{ steps.attempts.outputs.count }} of 3) completed — no new commits."
+              fi
             else
-              DETAILS="CI is failing. Triggered fix-pr (attempt ${{ steps.attempts.outputs.count }} of 3)."
+              DETAILS="CI is failing. fix-pr triggered (attempt ${{ steps.attempts.outputs.count }} of 3)."
             fi
           elif [ "$CI_STATUS" == "passing" ]; then
-            DETAILS="CI is passing. Triggered review-pr."
+            DETAILS="No issues found. Setting PR to ready for human review."
           fi
 
           BODY=$(printf '%b' "${STATUS}\n\n${DETAILS}\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
