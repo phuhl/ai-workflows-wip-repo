@@ -197,6 +197,84 @@ export async function safeCleanup(
   }
 }
 
+export interface FileChange {
+  path: string;
+  content: string;
+}
+
+export function createPrWithChanges(
+  repo: string,
+  branchName: string,
+  title: string,
+  body: string,
+  changes: FileChange[],
+): { number: number; url: string } {
+  const baseSha: string = gh(
+    `api repos/${repo}/git/refs/heads/master --jq '.object.sha'`,
+  );
+
+  gh(
+    `api repos/${repo}/git/refs -f ref=refs/heads/${branchName} -f sha=${baseSha}`,
+  );
+
+  const treeItems = changes.map((c) => {
+    const blob = ghJson<{ sha: string }>(
+      `api repos/${repo}/git/blobs --input -`,
+      { stdin: JSON.stringify({ content: c.content, encoding: "utf-8" }) },
+    );
+    return {
+      path: c.path,
+      mode: "100644" as const,
+      type: "blob" as const,
+      sha: blob.sha,
+    };
+  });
+
+  const baseTreeSha: string = gh(
+    `api repos/${repo}/git/commits/${baseSha} --jq '.tree.sha'`,
+  );
+
+  const newTree = ghJson<{ sha: string }>(
+    `api repos/${repo}/git/trees --input -`,
+    {
+      stdin: JSON.stringify({
+        base_tree: baseTreeSha,
+        tree: treeItems,
+      }),
+    },
+  );
+
+  const newCommit = ghJson<{ sha: string }>(
+    `api repos/${repo}/git/commits --input -`,
+    {
+      stdin: JSON.stringify({
+        message: title,
+        tree: newTree.sha,
+        parents: [baseSha],
+      }),
+    },
+  );
+
+  gh(`api repos/${repo}/git/refs/heads/${branchName} -X PATCH --input -`, {
+    stdin: JSON.stringify({ sha: newCommit.sha, force: true }),
+  });
+
+  const pr = ghJson<{ number: number; html_url: string }>(
+    `api repos/${repo}/pulls --input -`,
+    {
+      stdin: JSON.stringify({
+        title,
+        body,
+        head: branchName,
+        base: "master",
+        draft: true,
+      }),
+    },
+  );
+
+  return { number: pr.number, url: pr.html_url };
+}
+
 export function getDefaultBranch(repo: string): string {
   try {
     return gh(
