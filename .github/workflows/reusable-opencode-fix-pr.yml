@@ -105,6 +105,28 @@ jobs:
         run: |
           npx tsx .opencode/skills/_shared/scripts/fetch-pr-context.ts "$PR_NUMBER" || true
 
+      - name: Determine fix-pr context
+        id: context
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          PR_NUMBER: ${{ github.event.issue.number || github.event.inputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          CONTEXT="ci-failing"
+
+          REVIEW_COUNT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --jq 'length' 2>/dev/null || echo 0)
+
+          if [ "$REVIEW_COUNT" -gt 0 ]; then
+            UNRESOLVED=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
+              --jq '[.[] | select(.in_reply_to_id == null)] | map(.id) | join(",")')
+            if [ -n "$UNRESOLVED" ]; then
+              CONTEXT="review-comments"
+            fi
+          fi
+
+          echo "context=${CONTEXT}" >> "$GITHUB_OUTPUT"
+          echo "fix-pr context: ${CONTEXT} (review comments found: ${REVIEW_COUNT})"
+
       - name: Run fix-pr skill
         id: fix_pr
         continue-on-error: true
@@ -114,11 +136,7 @@ jobs:
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: max
         run: |
-          CONTEXT="ci-failing"
-          if echo "${{ github.event.comment.body }}" | grep -qi "review"; then
-            CONTEXT="review-comments"
-          fi
-          opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ github.event.issue.number || github.event.inputs.pr_number }} with context ${CONTEXT}" 2>&1 | tee /tmp/opencode-fix-pr.log
+          opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ github.event.issue.number || github.event.inputs.pr_number }} with context ${{ steps.context.outputs.context }}" 2>&1 | tee /tmp/opencode-fix-pr.log
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Post error comment on failure
