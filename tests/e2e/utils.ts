@@ -173,8 +173,18 @@ export async function runScenario(
         );
       }
       logPass(
-        `Workflow run ${startedRun.databaseId} completed (${workflowConclusion}) — skipping remaining wait.`,
+        `Workflow run ${startedRun.databaseId} completed (${workflowConclusion}) — giving wait function time to finish.`,
       );
+      // Give the wait function a final chance to set up context (e.g. find the PR)
+      try {
+        await Promise.race([
+          scenario.wait(ctx).catch(() => {}),
+          new Promise((resolve) => setTimeout(resolve, 120_000)),
+        ]);
+        logPass("Wait complete");
+      } catch {
+        logPass("Wait timed out after workflow completion");
+      }
     } else {
       logPass("Wait complete");
     }
