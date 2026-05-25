@@ -43,11 +43,7 @@ describe("greet", () => {
     ctx.prNumber = result.number;
   },
   trigger: async (ctx) => {
-    commentOnIssue(
-      ctx.repo,
-      ctx.prNumber!,
-      "/oc fix-pr Please review for edge case handling.",
-    );
+    commentOnIssue(ctx.repo, ctx.prNumber!, "/oc fix-pr");
   },
   wait: async (ctx) => {
     const found = await waitFor(
@@ -81,6 +77,19 @@ describe("greet", () => {
       (c) => isBot(c.author) && c.body.includes("encountered an error"),
     );
     results.push(assert(!errorComment, "No error comment from bot"));
+
+    const fabricatedComment = comments.find(
+      (c) =>
+        isBot(c.author) &&
+        c.body.includes("Changes made") &&
+        c.body.includes("All review comments addressed"),
+    );
+    results.push(
+      assert(
+        !fabricatedComment,
+        "Bot did not fabricate change summaries with no review comments",
+      ),
+    );
 
     return results;
   },

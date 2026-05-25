@@ -25,7 +25,22 @@ Fetch main-thread PR comments (not review comments):
 gh pr view <pr-number> --json comments -q '.comments[] | {id, body, author: .author.login, created_at}' > /tmp/pr_comments.json
 ```
 
-### 2. Build the todo list
+### 2. Check if there are any comments to address
+
+Before building the todo list, check whether any review comments exist at all. If ALL of the following are empty, **stop here with a brief message — do not fabricate changes**:
+
+- No code-line review comments on the PR
+- No main-thread PR comments from humans that need a reply
+
+If there are no comments to address, post a short comment and exit:
+
+```bash
+gh pr comment <pr-number> --body "✅ **OpenCode fix-pr finished** — no unresolved review comments found. Nothing to address."
+```
+
+Do NOT run self-check audits. Do NOT post a summary of "changes made." Stop immediately.
+
+### 3. Build the todo list
 
 Use the `todowrite` tool to create ONE todo item per comment that needs attention. Do not group or batch them — each comment must be its own item.
 
@@ -46,7 +61,7 @@ or for main-thread comments:
 PR comment from <user> — "<truncated body>"
 ```
 
-### 3. Process each todo item
+### 4. Process each todo item
 
 Set the current item to `in_progress`, handle it, then mark it `completed`. Work through them one at a time.
 
@@ -86,7 +101,7 @@ If no user triage (no thumbs-down, or comment is from a human), proceed to addre
 
 - **Question** — reply with your answer (use the same reply methods as push-back).
 
-### 4. Verify
+### 5. Verify
 
 After all todo items are completed, run the verification script:
 ```bash
@@ -101,14 +116,14 @@ gh api "repos/{owner}/{repo}/pulls/comments" --jq ".[] | select(.id == <id> or .
 
 Base your action on the **most recent human reply in the thread**, not just the original comment. For every comment addressed in the verification pass, you MUST post a reply explaining what action was taken (and why), just as in step 3.
 
-### 5. Post summary
+### 6. Post summary
 
 ```bash
 gh pr comment <pr-number> --body "All review comments addressed. Changes made:
 - <bullet list of what was done>"
 ```
 
-### 6. Run self-check audits
+### 7. Run self-check audits
 
 After all comments are addressed and the summary is posted, run self-check audits on the full PR diff:
 
