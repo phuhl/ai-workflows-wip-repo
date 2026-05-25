@@ -20,6 +20,64 @@ Parse `$ARGUMENTS` as: `<scenario-name> [prompt]`
 
 If no `.env` file is present, read it from `/workspace/.env` (the ai-workflows repo root, not the target repo).
 
+## Phase 0 — Deploy changes to wip repo
+
+Before running E2E, you must deploy the current code changes to the wip repo so the test repo exercises them. The test repo's `opencode-master.yml` wrapper references the wip repo, NOT the main `apparts-js/ai-workflows` repo. This is the critical feedback loop: push → test → fix → repeat.
+
+### 0a. Push local changes to wip
+
+Read the wip repo URL from `.env`:
+
+```bash
+grep WIP_REPO_URL /workspace/.env | cut -d= -f2
+# e.g. https://github.com/phuhl/ai-workflows-wip-repo
+```
+
+The ai-workflows repo should already have a `wip` remote pointing there. Push current branch to wip master:
+
+```bash
+git push wip master
+```
+
+If the push fails (e.g. remote not configured), set it up:
+
+```bash
+WIP_URL=$(grep WIP_REPO_URL /workspace/.env | cut -d= -f2)
+GITHUB_TOKEN=$(grep GITHUB_TOKEN /workspace/.env | cut -d= -f2)
+WIP_AUTH_URL=$(echo "$WIP_URL" | sed "s|https://|https://x-access-token:${GITHUB_TOKEN}@|")
+git remote add wip "$WIP_AUTH_URL" 2>/dev/null || true
+git push wip master
+```
+
+### 0b. Verify the test repo is wired to wip
+
+Confirm the test repo's wrapper points to the wip repo:
+
+```bash
+TEST_REPO=$(grep TEST_REPO /workspace/.env | cut -d= -f2)
+gh api "repos/${TEST_REPO}/contents/.github/workflows/opencode-master.yml" --jq '.content' | base64 -d | grep 'uses:'
+```
+
+Expected: all `uses:` lines must reference `phuhl/ai-workflows-wip-repo` (not `apparts-js/ai-workflows`). If any reference the main repo, update the test repo's wrapper to point at wip.
+
+Also verify the wip repo's reusable workflows sub-references are self-consistent (point to wip, not main repo):
+
+```bash
+WIP_REPO=$(echo "$WIP_URL" | sed 's|https://github.com/||')
+gh api "repos/${WIP_REPO}/contents/.github/workflows/reusable-opencode-master.yml" --jq '.content' | base64 -d | grep 'uses:'
+```
+
+If sub-workflow references point to `apparts-js/ai-workflows` instead of the wip repo, edit the wip repo's master router to use the wip repo for all `uses:` refs. (This should already be done — verify it.)
+
+### 0c. Verify wip is ahead of or equal to origin
+
+```bash
+git fetch origin --no-tags
+git log wip/master..origin/master --oneline
+```
+
+If origin/master has commits not on wip/master, either push those to wip as well or note that the test will exercise stale code.
+
 ## Phase 1 — Run the scenario
 
 1. Read the `.env` file to determine the test repo:
