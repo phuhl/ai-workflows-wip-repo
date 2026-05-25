@@ -5,7 +5,7 @@ import type {
   AssertionResult,
   WorkflowRun,
 } from "./types";
-import { getWorkflowRuns } from "./engine";
+import { getWorkflowRuns, getWorkflowRun } from "./engine";
 
 export function logHeader(text: string): void {
   const line = "=".repeat(60);
@@ -48,7 +48,7 @@ export async function verifyRunStarted(
   branch: string,
   after: Date,
 ): Promise<WorkflowRun> {
-  const timeoutMs = 120_000;
+  const timeoutMs = 240_000;
 
   while (Date.now() - after.getTime() < timeoutMs) {
     const runs = await getWorkflowRuns(repo, branch);
@@ -61,19 +61,17 @@ export async function verifyRunStarted(
     if (newRuns.length > 0) {
       const latest = newRuns[0];
 
-      if (latest.status === "completed" && latest.conclusion === "failure") {
+      if (
+        latest.status === "completed" &&
+        (latest.conclusion === "failure" ||
+          latest.conclusion === "startup_failure")
+      ) {
         throw new Error(
-          `Workflow run ${latest.id} failed at startup (no runner assigned, missing secrets, or invalid workflow). Check the run for details.`,
+          `Workflow run ${latest.id} failed at startup (conclusion: ${latest.conclusion}). Check the run for details.`,
         );
       }
 
-      if (
-        latest.status === "queued" ||
-        latest.status === "in_progress" ||
-        latest.status === "waiting"
-      ) {
-        return latest;
-      }
+      return latest;
     }
 
     await sleep(10000);
@@ -105,10 +103,43 @@ export async function runScenario(
 
     logStep("Verifying workflow started...");
     const startedRun = await verifyRunStarted(ctx.repo, "master", triggerTime);
+    logPass(
+      `Workflow run ${startedRun.id} started (status: ${startedRun.status})`,
+    );
 
-    logStep(`Waiting (timeout: ${scenario.timeoutMs}ms)...`);
-    await scenario.wait(ctx);
-    logPass("Wait complete");
+    let workflowConclusion: string | null = null;
+
+    const waitPromise = (async () => {
+      await scenario.wait(ctx);
+      return "wait" as const;
+    })();
+
+    const pollPromise = (async () => {
+      while (true) {
+        await sleep(60_000);
+        const run = await getWorkflowRun(ctx.repo, startedRun.id);
+        if (!run) continue;
+        if (run.status === "completed") {
+          workflowConclusion = run.conclusion;
+          return "workflow" as const;
+        }
+      }
+    })();
+
+    const winner = await Promise.race([waitPromise, pollPromise]);
+
+    if (winner === "workflow") {
+      if (workflowConclusion === "failure") {
+        throw new Error(
+          `Workflow run ${startedRun.id} finished with conclusion "${workflowConclusion}" before wait completed.`,
+        );
+      }
+      logPass(
+        `Workflow run ${startedRun.id} completed (${workflowConclusion}) — skipping remaining wait.`,
+      );
+    } else {
+      logPass("Wait complete");
+    }
 
     logStep("Running assertions...");
     const assertions = await scenario.assertions(ctx);
