@@ -1,16 +1,13 @@
 import type { ScenarioSpec, E2EContext } from "../types";
 import {
-  createIssue,
-  labelIssue,
   addPrLabel,
   getPrComments,
   getPrLabels,
-  getPrForIssue,
-  closeIssue,
   closePr,
   deleteBranch,
   getPr,
   safeCleanup,
+  createPrWithChanges,
 } from "../engine";
 import { waitFor, assert, isBot } from "../utils";
 
@@ -20,33 +17,36 @@ export const completeGate: ScenarioSpec = {
     "PR with auto-review label triggers complete-gate which processes and adds ready for review",
   timeoutMs: 900_000, // 15 minutes
   setup: async (ctx) => {
-    const issue = createIssue(
+    const branchName = `e2e/complete-gate-${Date.now()}`;
+    ctx.branchName = branchName;
+
+    const result = createPrWithChanges(
       ctx.repo,
+      branchName,
       "CompleteGate test: add JSDoc to add function",
       "Add a JSDoc comment above the `add` function in src/add.ts explaining what it does.",
+      [
+        {
+          path: "src/add.ts",
+          content: `/**
+ * Adds two numbers together.
+ * @param a - The first number.
+ * @param b - The second number.
+ * @returns The sum of a and b.
+ */
+export function add(a: number, b: number): number {
+  return a + b;
+}
+`,
+        },
+      ],
     );
-    ctx.issueNumber = issue.number;
-    labelIssue(ctx.repo, issue.number, "opencode");
+    ctx.prNumber = result.number;
   },
   trigger: async (ctx) => {
-    const found = await waitFor(
-      async () => {
-        const pr = await getPrForIssue(ctx.repo, ctx.issueNumber!);
-        if (pr) {
-          ctx.prNumber = pr.number;
-          return true;
-        }
-        return false;
-      },
-      300_000,
-      15000,
-    );
-    if (!found) throw new Error("Timed out waiting for PR to be created");
-
     addPrLabel(ctx.repo, ctx.prNumber!, "auto-review");
   },
   wait: async (ctx) => {
-    // Wait for either: ready for review label, autofix-exhausted, or a progress comment
     const found = await waitFor(
       async () => {
         const labels = await getPrLabels(ctx.repo, ctx.prNumber!);
@@ -78,7 +78,6 @@ export const completeGate: ScenarioSpec = {
     const labels = await getPrLabels(ctx.repo, ctx.prNumber!);
     const comments = await getPrComments(ctx.repo, ctx.prNumber!);
 
-    // Complete-gate posted a progress comment
     const gateComment = comments.find(
       (c) => isBot(c.author) && c.body.includes("Complete Gate is processing"),
     );
@@ -86,7 +85,6 @@ export const completeGate: ScenarioSpec = {
       assert(!!gateComment, "Complete-gate posted a progress comment"),
     );
 
-    // Either ready for review or autofix-exhausted label exists
     const terminalLabel = labels.some(
       (l) => l === "ready for review" || l === "autofix-exhausted",
     );
@@ -97,7 +95,6 @@ export const completeGate: ScenarioSpec = {
       ),
     );
 
-    // Gate-running label should be removed (gate finished)
     results.push(
       assert(
         !labels.includes("gate-running"),
@@ -105,7 +102,6 @@ export const completeGate: ScenarioSpec = {
       ),
     );
 
-    // No error
     const errorComment = comments.find(
       (c) => isBot(c.author) && c.body.includes("encountered an error"),
     );
@@ -120,12 +116,6 @@ export const completeGate: ScenarioSpec = {
         await deleteBranch(ctx.repo, pr.headRefName);
       }, "delete branch");
       await safeCleanup(() => closePr(ctx.repo, ctx.prNumber!), "close PR");
-    }
-    if (ctx.issueNumber) {
-      await safeCleanup(
-        () => closeIssue(ctx.repo, ctx.issueNumber!),
-        "close issue",
-      );
     }
   },
 };
