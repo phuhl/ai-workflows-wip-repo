@@ -1,19 +1,15 @@
 import type { ScenarioSpec, E2EContext } from "../types";
 import {
-  createIssue,
-  labelIssue,
   addPrLabel,
-  removePrLabel,
   getPrLabels,
   getPrComments,
-  getPrForIssue,
-  closeIssue,
   closePr,
   deleteBranch,
   getPr,
   safeCleanup,
+  createPrWithChanges,
 } from "../engine";
-import { waitFor, sleep, assert, isBot } from "../utils";
+import { waitFor, assert, isBot } from "../utils";
 
 export const autofixExhausted: ScenarioSpec = {
   name: "autofix-exhausted",
@@ -21,34 +17,34 @@ export const autofixExhausted: ScenarioSpec = {
     "PR with failing CI gets auto-review → complete-gate tries autofix up to 3 times → exhausts",
   timeoutMs: 1_800_000, // 30 minutes
   setup: async (ctx) => {
-    const issue = createIssue(
+    const branchName = `e2e/autofix-exhausted-${Date.now()}`;
+    ctx.branchName = branchName;
+
+    const result = createPrWithChanges(
       ctx.repo,
+      branchName,
       "Autofix test: add broken test intentionally",
-      "Add a test in tests/broken.test.ts that always fails: expect(1).toBe(2). This should cause CI to fail.",
+      "Add a test in tests/broken.test.ts that always fails: expect(1).toBe(2).",
+      [
+        {
+          path: "tests/broken.test.ts",
+          content: `import { describe, it, expect } from "vitest";
+
+describe("broken", () => {
+  it("always fails", () => {
+    expect(1).toBe(2);
+  });
+});
+`,
+        },
+      ],
     );
-    ctx.issueNumber = issue.number;
-    labelIssue(ctx.repo, issue.number, "opencode");
+    ctx.prNumber = result.number;
   },
   trigger: async (ctx) => {
-    const found = await waitFor(
-      async () => {
-        const pr = await getPrForIssue(ctx.repo, ctx.issueNumber!);
-        if (pr) {
-          ctx.prNumber = pr.number;
-          return true;
-        }
-        return false;
-      },
-      300_000,
-      15000,
-    );
-    if (!found) throw new Error("Timed out waiting for PR to be created");
-
     addPrLabel(ctx.repo, ctx.prNumber!, "auto-review");
   },
   wait: async (ctx) => {
-    // Poll for autofix-exhausted label or autofix-attempts-3 label
-    // Complete-gate runs when auto-review is added, and re-adds auto-review after each attempt
     const found = await waitFor(
       async () => {
         const labels = await getPrLabels(ctx.repo, ctx.prNumber!);
@@ -64,7 +60,6 @@ export const autofixExhausted: ScenarioSpec = {
     const labels = await getPrLabels(ctx.repo, ctx.prNumber!);
     const comments = await getPrComments(ctx.repo, ctx.prNumber!);
 
-    // autofix-exhausted label exists
     results.push(
       assert(
         labels.includes("autofix-exhausted"),
@@ -72,7 +67,6 @@ export const autofixExhausted: ScenarioSpec = {
       ),
     );
 
-    // Warning comment posted
     const warnComment = comments.find(
       (c) => isBot(c.author) && c.body.includes("Autofix exhausted"),
     );
@@ -80,7 +74,6 @@ export const autofixExhausted: ScenarioSpec = {
       assert(!!warnComment, "Warning comment about exhaustion was posted"),
     );
 
-    // At least one autofix attempt was recorded
     const attemptLabels = labels.filter((l) => /^autofix-attempts-\d$/.test(l));
     results.push(
       assert(
@@ -98,12 +91,6 @@ export const autofixExhausted: ScenarioSpec = {
         await deleteBranch(ctx.repo, pr.headRefName);
       }, "delete branch");
       await safeCleanup(() => closePr(ctx.repo, ctx.prNumber!), "close PR");
-    }
-    if (ctx.issueNumber) {
-      await safeCleanup(
-        () => closeIssue(ctx.repo, ctx.issueNumber!),
-        "close issue",
-      );
     }
   },
 };
