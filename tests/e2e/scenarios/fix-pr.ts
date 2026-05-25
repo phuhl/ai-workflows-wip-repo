@@ -1,15 +1,12 @@
 import type { ScenarioSpec, E2EContext } from "../types";
 import {
-  createIssue,
-  labelIssue,
   commentOnIssue,
   getPrComments,
-  getPrForIssue,
-  closeIssue,
   closePr,
   deleteBranch,
   getPr,
   safeCleanup,
+  createPrWithChanges,
 } from "../engine";
 import { waitFor, assert, isBot } from "../utils";
 
@@ -19,30 +16,32 @@ export const fixPr: ScenarioSpec = {
     "Comment /oc fix-pr on a PR triggers the fix-pr skill and bot responds",
   timeoutMs: 600_000,
   setup: async (ctx) => {
-    const issue = createIssue(
+    const branchName = `e2e/fix-pr-${Date.now()}`;
+    ctx.branchName = branchName;
+
+    const result = createPrWithChanges(
       ctx.repo,
+      branchName,
       "Fix: add test for greet function edge case",
       "Add a test in tests/greet.test.ts that verifies greet with an empty string returns 'Hello '.",
-    );
-    ctx.issueNumber = issue.number;
+      [
+        {
+          path: "tests/greet.test.ts",
+          content: `import { greet } from "../src/greet";
+import { describe, it, expect } from "vitest";
 
-    labelIssue(ctx.repo, issue.number, "opencode");
+describe("greet", () => {
+  it("returns 'Hello ' for empty string", () => {
+    expect(greet("")).toBe("Hello ");
+  });
+});
+`,
+        },
+      ],
+    );
+    ctx.prNumber = result.number;
   },
   trigger: async (ctx) => {
-    const found = await waitFor(
-      async () => {
-        const pr = await getPrForIssue(ctx.repo, ctx.issueNumber!);
-        if (pr) {
-          ctx.prNumber = pr.number;
-          return true;
-        }
-        return false;
-      },
-      300_000,
-      15000,
-    );
-    if (!found) throw new Error("Timed out waiting for PR to be created");
-
     commentOnIssue(
       ctx.repo,
       ctx.prNumber!,
@@ -91,12 +90,6 @@ export const fixPr: ScenarioSpec = {
         await deleteBranch(ctx.repo, pr.headRefName);
       }, "delete branch");
       await safeCleanup(() => closePr(ctx.repo, ctx.prNumber!), "close PR");
-    }
-    if (ctx.issueNumber) {
-      await safeCleanup(
-        () => closeIssue(ctx.repo, ctx.issueNumber!),
-        "close issue",
-      );
     }
   },
 };
