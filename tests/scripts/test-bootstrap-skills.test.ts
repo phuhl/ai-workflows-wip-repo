@@ -150,4 +150,119 @@ describe("bootstrapSkills", () => {
       bootstrapSkills({ sharedDir: "", localDir: "", outDir: "" });
     }).toThrow();
   });
+
+  it("creates opencode.json with skills.paths when none exists", () => {
+    const tmp = tmpdir();
+    const originalCwd = process.cwd();
+    try {
+      process.chdir(tmp);
+
+      bootstrapSkills({
+        sharedDir: "/nonexistent",
+        localDir: "/nonexistent",
+        outDir: path.join(tmp, "out"),
+      });
+
+      const configPath = path.join(tmp, "opencode.json");
+      expect(fs.existsSync(configPath)).toBe(true);
+      const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      expect(config.skills).toBeDefined();
+      expect(config.skills.paths).toContain(".opencode/skills");
+    } finally {
+      process.chdir(originalCwd);
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("adds .opencode/skills to existing opencode.json paths", () => {
+    const tmp = tmpdir();
+    const originalCwd = process.cwd();
+    try {
+      const existingConfig = {
+        skills: { paths: ["custom/skills"] },
+      };
+      fs.writeFileSync(
+        path.join(tmp, "opencode.json"),
+        JSON.stringify(existingConfig),
+      );
+
+      process.chdir(tmp);
+
+      bootstrapSkills({
+        sharedDir: "/nonexistent",
+        localDir: "/nonexistent",
+        outDir: path.join(tmp, "out"),
+      });
+
+      const config = JSON.parse(
+        fs.readFileSync(path.join(tmp, "opencode.json"), "utf-8"),
+      );
+      expect(config.skills.paths).toContain(".opencode/skills");
+      expect(config.skills.paths).toContain("custom/skills");
+    } finally {
+      process.chdir(originalCwd);
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("does not duplicate .opencode/skills in paths", () => {
+    const tmp = tmpdir();
+    const originalCwd = process.cwd();
+    try {
+      const existingConfig = {
+        skills: { paths: [".opencode/skills"] },
+      };
+      fs.writeFileSync(
+        path.join(tmp, "opencode.json"),
+        JSON.stringify(existingConfig),
+      );
+
+      process.chdir(tmp);
+
+      bootstrapSkills({
+        sharedDir: "/nonexistent",
+        localDir: "/nonexistent",
+        outDir: path.join(tmp, "out"),
+      });
+
+      const config = JSON.parse(
+        fs.readFileSync(path.join(tmp, "opencode.json"), "utf-8"),
+      );
+      const count = config.skills.paths.filter(
+        (p: string) => p === ".opencode/skills",
+      ).length;
+      expect(count).toBe(1);
+    } finally {
+      process.chdir(originalCwd);
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("adds skills.paths to existing opencode.json that lacks it", () => {
+    const tmp = tmpdir();
+    const originalCwd = process.cwd();
+    try {
+      const existingConfig = { permission: { read: ["."] } };
+      fs.writeFileSync(
+        path.join(tmp, "opencode.json"),
+        JSON.stringify(existingConfig),
+      );
+
+      process.chdir(tmp);
+
+      bootstrapSkills({
+        sharedDir: "/nonexistent",
+        localDir: "/nonexistent",
+        outDir: path.join(tmp, "out"),
+      });
+
+      const config = JSON.parse(
+        fs.readFileSync(path.join(tmp, "opencode.json"), "utf-8"),
+      );
+      expect(config.skills.paths).toContain(".opencode/skills");
+    } finally {
+      process.chdir(originalCwd);
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
 });

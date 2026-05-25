@@ -91,20 +91,33 @@ export function bootstrapSkills(options: BootstrapOptions): string {
       fs.writeFileSync(path.join(outPluginsDir, ".gitignore"), "*\n");
     }
 
-    // 6. Ensure /tmp/** is allowed in opencode permissions
+    // 6. Ensure opencode config has required fields
     const opencodeJsonPath = "opencode.json";
+    const ensureConfig = (config: Record<string, unknown>) => {
+      config.permission = config.permission || {};
+      const perm = config.permission as Record<string, unknown>;
+      perm.external_directory = perm.external_directory || {};
+      (perm.external_directory as Record<string, string>)["/tmp/**"] = "allow";
+
+      config.skills = config.skills || {};
+      const skills = config.skills as Record<string, unknown>;
+      skills.paths = skills.paths || [];
+      const paths = skills.paths as string[];
+      if (!paths.includes(".opencode/skills")) {
+        paths.unshift(".opencode/skills");
+      }
+    };
+
     if (fs.existsSync(opencodeJsonPath)) {
       const config = JSON.parse(fs.readFileSync(opencodeJsonPath, "utf-8"));
-      config.permission = config.permission || {};
-      config.permission.external_directory =
-        config.permission.external_directory || {};
-      config.permission.external_directory["/tmp/**"] = "allow";
+      ensureConfig(config);
       fs.writeFileSync(
         opencodeJsonPath,
         JSON.stringify(config, null, 2) + "\n",
       );
     } else {
-      const config = {
+      const config: Record<string, unknown> = {
+        skills: { paths: [".opencode/skills"] },
         permission: { external_directory: { "/tmp/**": "allow" } },
       };
       fs.writeFileSync(

@@ -35,7 +35,10 @@ jobs:
       !(contains(github.event.comment.body, '/oc do') || contains(github.event.comment.body, '/opencode do')) &&
       (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode.yml@master
-    secrets: inherit
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
@@ -47,7 +50,10 @@ jobs:
        (contains(github.event.comment.body, '/oc do') || contains(github.event.comment.body, '/opencode do')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-do.yml@master
-    secrets: inherit
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
@@ -61,7 +67,10 @@ jobs:
        (contains(github.event.comment.body, '/oc plan') || contains(github.event.comment.body, '/opencode plan')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-plan.yml@master
-    secrets: inherit
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
@@ -75,7 +84,10 @@ jobs:
        (contains(github.event.comment.body, '/oc fix-pr') || contains(github.event.comment.body, '/opencode fix-pr')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-fix-pr.yml@master
-    secrets: inherit
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
@@ -89,7 +101,10 @@ jobs:
        (contains(github.event.comment.body, '/oc code-review') || contains(github.event.comment.body, '/opencode code-review')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-code-review.yml@master
-    secrets: inherit
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
@@ -106,7 +121,10 @@ jobs:
        (contains(github.event.comment.body, '/oc address-review') || contains(github.event.comment.body, '/opencode address-review')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-address-review.yml@master
-    secrets: inherit
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
@@ -125,7 +143,10 @@ jobs:
        (contains(github.event.comment.body, '/oc complete-gate') || contains(github.event.comment.body, '/opencode complete-gate')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-complete-gate.yml@master
-    secrets: inherit
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
@@ -135,7 +156,10 @@ jobs:
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
       (github.event_name == 'issues' && github.event.label.name == 'opencode' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-plan-and-implement.yml@master
-    secrets: inherit
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
