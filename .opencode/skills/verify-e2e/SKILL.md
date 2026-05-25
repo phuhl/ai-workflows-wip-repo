@@ -1,6 +1,6 @@
 ---
 name: verify-e2e
-description: Run an E2E test scenario against a dummy repo, deep-verify workflow comments, logs, and state transitions, and produce a structured pass/fail report. Triggered by '/oc verify-e2e <scenario>' or invoked as a skill for autonomous testing.
+description: Run an E2E test scenario against a dummy repo, deep-verify workflow comments, logs, and state transitions, and produce a structured pass/fail report. Triggered by '/oc verify-e2e <scenario>' or invoked as a skill for autonomous testing. Use whenever the user asks to run e2e tests, verify a scenario end-to-end, test the workflow, debug CI behavior, or validate that skills and workflows work correctly.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Todowrite, Task
 context: fork
 agent: general-purpose
