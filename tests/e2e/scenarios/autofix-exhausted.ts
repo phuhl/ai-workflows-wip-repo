@@ -14,8 +14,8 @@ import { waitFor, assert, isBot } from "../utils";
 export const autofixExhausted: ScenarioSpec = {
   name: "autofix-exhausted",
   description:
-    "PR with failing CI gets auto-review → complete-gate tries autofix up to 3 times → exhausts",
-  timeoutMs: 1_800_000, // 30 minutes
+    "PR with autofix-attempts-3 pre-seeded + failing CI → complete-gate skips fix-pr, sets exhausted",
+  timeoutMs: 600_000, // 10 minutes (only one CI cycle, no fix-pr retries)
   checkJob: "complete-gate",
   setup: async (ctx) => {
     const branchName = `e2e/autofix-exhausted-${Date.now()}`;
@@ -24,7 +24,7 @@ export const autofixExhausted: ScenarioSpec = {
     const result = createPrWithChanges(
       ctx.repo,
       branchName,
-      "Autofix test: add broken test intentionally",
+      "Autofix exhausted test: pre-seeded attempt counter",
       "Add a test in tests/broken.test.ts that always fails: expect(1).toBe(2).",
       [
         {
@@ -41,6 +41,8 @@ describe("broken", () => {
       ],
     );
     ctx.prNumber = result.number;
+
+    addPrLabel(ctx.repo, ctx.prNumber, "autofix-attempts-3");
   },
   trigger: async (ctx) => {
     addPrLabel(ctx.repo, ctx.prNumber!, "auto-review");
@@ -51,7 +53,7 @@ describe("broken", () => {
         const labels = await getPrLabels(ctx.repo, ctx.prNumber!);
         return labels.includes("autofix-exhausted");
       },
-      1_680_000,
+      540_000,
       30000,
     );
     if (!found) throw new Error("Timed out waiting for autofix-exhausted");
@@ -78,8 +80,8 @@ describe("broken", () => {
     const attemptLabels = labels.filter((l) => /^autofix-attempts-\d$/.test(l));
     results.push(
       assert(
-        attemptLabels.length > 0 || labels.includes("autofix-exhausted"),
-        "Autofix attempt labels were cycled",
+        attemptLabels.length > 0 && labels.includes("autofix-exhausted"),
+        "autofix-attempts-3 label is present alongside autofix-exhausted",
       ),
     );
 
