@@ -1,16 +1,12 @@
 import type { ScenarioSpec, E2EContext } from "../types";
 import {
-  createIssue,
-  labelIssue,
   commentOnIssue,
-  getPrReviewComments,
   getPrComments,
-  getPrForIssue,
-  closeIssue,
   closePr,
   deleteBranch,
   getPr,
   safeCleanup,
+  createPrWithChanges,
 } from "../engine";
 import { waitFor, assert, isBot } from "../utils";
 
@@ -20,30 +16,32 @@ export const codeReview: ScenarioSpec = {
     "Comment /oc code-review on a PR triggers review-pr and posts review comments",
   timeoutMs: 600_000,
   setup: async (ctx) => {
-    const issue = createIssue(
-      ctx.repo,
-      "Review test: add comment to greet function",
-      "Add a JSDoc comment above the `greet` function in src/greet.ts explaining what it does.",
-    );
-    ctx.issueNumber = issue.number;
+    const branchName = `e2e/code-review-${Date.now()}`;
+    ctx.branchName = branchName;
 
-    labelIssue(ctx.repo, issue.number, "opencode");
+    const result = createPrWithChanges(
+      ctx.repo,
+      branchName,
+      "Review test: add JSDoc to greet function",
+      "Add a JSDoc comment above the `greet` function in src/greet.ts explaining what it does.",
+      [
+        {
+          path: "src/greet.ts",
+          content: `/**
+ * Greets a person by name.
+ * @param name - The name to greet.
+ * @returns A greeting string.
+ */
+export function greet(name: string): string {
+  return "Hello " + name;
+}
+`,
+        },
+      ],
+    );
+    ctx.prNumber = result.number;
   },
   trigger: async (ctx) => {
-    const found = await waitFor(
-      async () => {
-        const pr = await getPrForIssue(ctx.repo, ctx.issueNumber!);
-        if (pr) {
-          ctx.prNumber = pr.number;
-          return true;
-        }
-        return false;
-      },
-      300_000,
-      15000,
-    );
-    if (!found) throw new Error("Timed out waiting for PR to be created");
-
     commentOnIssue(ctx.repo, ctx.prNumber!, "/oc code-review");
   },
   wait: async (ctx) => {
@@ -87,12 +85,6 @@ export const codeReview: ScenarioSpec = {
         await deleteBranch(ctx.repo, pr.headRefName);
       }, "delete branch");
       await safeCleanup(() => closePr(ctx.repo, ctx.prNumber!), "close PR");
-    }
-    if (ctx.issueNumber) {
-      await safeCleanup(
-        () => closeIssue(ctx.repo, ctx.issueNumber!),
-        "close issue",
-      );
     }
   },
 };
