@@ -76,6 +76,20 @@ The complete-gate's CI polling loop must explicitly exclude OpenCode-named check
 
 ## State machine checks
 
+### Concurrency guard (no parallel gate runs)
+```
+# Check how many complete-gate jobs overlapped in time for the same PR.
+# Fetch all runs for the branch, extract complete-gate job start/end times,
+# and check for overlapping intervals.
+```
+If two or more `complete-gate` (reusable workflow) jobs ran simultaneously for the same PR, the concurrency guard has failed. This is a **FAIL** — multiple parallel gate runs produce duplicate comments, conflicting label changes, and race conditions.
+
+To detect:
+1. Get all workflow runs for the PR's head branch: `gh run list --repo <repo> --branch <branch> --json databaseId,createdAt,updatedAt`
+2. For each run, check which jobs ran: `gh api repos/<repo>/actions/runs/<run-id>/jobs --jq '.jobs[] | select(.name | contains("complete-gate")) | {name, startedAt, completedAt}'`
+3. If any two `complete-gate` jobs have overlapping `[startedAt, completedAt]` intervals, flag as FAIL.
+4. Also check for **cancelled** complete-gate jobs — these indicate a concurrency conflict where one run was cancelled because another was already running.
+
 ### Autofix attempt tracking
 ```
 grep "autofix-attempts" <log>

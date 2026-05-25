@@ -67,6 +67,7 @@ Inspect the logs for:
 
 ### 2c. State machine correctness
 
+- **No parallel gate runs**: Check that only ONE `complete-gate` reusable workflow job ran at a time for a given PR. If multiple gate jobs overlapped (producing duplicate comments, conflicting labels), the concurrency guard failed. See the "Concurrency guard" check in `references/deep-check.md` for the detection procedure. **This is a FAIL** if found.
 - **No infinite loops**: Check that the complete-gate doesn't re-trigger itself indefinitely. The total number of autofix attempts must be ≤ 3 per category. Check for `gate-running` label removal.
 - **Label transitions**: Verify the label state machine transitions correctly:
   - `opencode` label on issue → `plan-and-implement` runs
@@ -74,6 +75,7 @@ Inspect the logs for:
   - After complete-gate finishes: `auto-review` removed, `ready for review` or `autofix-exhausted` added
   - `gate-running` must be removed after complete-gate finishes
 - **PR promotion**: After `review-pr` runs and CI passes, verify `gh pr ready` was called (check logs for `gh pr ready`).
+- **Cancelled jobs**: A `complete-gate` job with conclusion `cancelled` indicates a concurrency conflict. Flag as FAIL.
 
 ### 2d. Context-aware verification
 
