@@ -34,7 +34,7 @@ jobs:
       !(contains(github.event.comment.body, '/oc address-review') || contains(github.event.comment.body, '/opencode address-review')) &&
       !(contains(github.event.comment.body, '/oc do') || contains(github.event.comment.body, '/opencode do')) &&
       (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode.yml@master
+    uses: phuhl/ai-workflows-wip-repo/.github/workflows/reusable-opencode.yml@master
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       APP_ID: ${{ secrets.APP_ID }}
@@ -49,7 +49,7 @@ jobs:
       github.event.comment.user.type != 'Bot' &&
        (contains(github.event.comment.body, '/oc do') || contains(github.event.comment.body, '/opencode do')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-do.yml@master
+    uses: phuhl/ai-workflows-wip-repo/.github/workflows/reusable-opencode-do.yml@master
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       APP_ID: ${{ secrets.APP_ID }}
@@ -66,7 +66,7 @@ jobs:
        !github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc plan') || contains(github.event.comment.body, '/opencode plan')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-plan.yml@master
+    uses: phuhl/ai-workflows-wip-repo/.github/workflows/reusable-opencode-plan.yml@master
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       APP_ID: ${{ secrets.APP_ID }}
@@ -83,7 +83,7 @@ jobs:
        github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc fix-pr') || contains(github.event.comment.body, '/opencode fix-pr')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-fix-pr.yml@master
+    uses: phuhl/ai-workflows-wip-repo/.github/workflows/reusable-opencode-fix-pr.yml@master
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       APP_ID: ${{ secrets.APP_ID }}
@@ -100,7 +100,7 @@ jobs:
        github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc code-review') || contains(github.event.comment.body, '/opencode code-review')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-code-review.yml@master
+    uses: phuhl/ai-workflows-wip-repo/.github/workflows/reusable-opencode-code-review.yml@master
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       APP_ID: ${{ secrets.APP_ID }}
@@ -120,7 +120,7 @@ jobs:
        github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc address-review') || contains(github.event.comment.body, '/opencode address-review')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-address-review.yml@master
+    uses: phuhl/ai-workflows-wip-repo/.github/workflows/reusable-opencode-address-review.yml@master
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       APP_ID: ${{ secrets.APP_ID }}
@@ -142,7 +142,7 @@ jobs:
        github.event.issue.pull_request &&
        (contains(github.event.comment.body, '/oc complete-gate') || contains(github.event.comment.body, '/opencode complete-gate')) &&
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-complete-gate.yml@master
+    uses: phuhl/ai-workflows-wip-repo/.github/workflows/reusable-opencode-complete-gate.yml@master
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       APP_ID: ${{ secrets.APP_ID }}
@@ -155,7 +155,7 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
       (github.event_name == 'issues' && github.event.label.name == 'opencode' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
-    uses: apparts-js/ai-workflows/.github/workflows/reusable-opencode-plan-and-implement.yml@master
+    uses: phuhl/ai-workflows-wip-repo/.github/workflows/reusable-opencode-plan-and-implement.yml@master
     secrets:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       APP_ID: ${{ secrets.APP_ID }}
