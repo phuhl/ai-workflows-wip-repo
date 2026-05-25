@@ -11,6 +11,10 @@ on:
         type: string
         default: false
         required: false
+      WORKFLOWS_REPO:
+        type: string
+        default: 'apparts-js/ai-workflows'
+        required: false
     secrets:
       OPENCODE_API_KEY:
         required: true
@@ -34,7 +38,8 @@ jobs:
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
-
+      WORKFLOWS_REPO: ${{ inputs.WORKFLOWS_REPO }}
+    
   opencode-plan:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
@@ -49,7 +54,8 @@ jobs:
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
-
+      WORKFLOWS_REPO: ${{ inputs.WORKFLOWS_REPO }}
+    
   opencode-fix-pr:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
@@ -66,7 +72,8 @@ jobs:
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
-
+      WORKFLOWS_REPO: ${{ inputs.WORKFLOWS_REPO }}
+    
   opencode-code-review:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
@@ -81,7 +88,8 @@ jobs:
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
-
+      WORKFLOWS_REPO: ${{ inputs.WORKFLOWS_REPO }}
+    
   opencode-address-review:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
@@ -101,7 +109,8 @@ jobs:
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
-
+      WORKFLOWS_REPO: ${{ inputs.WORKFLOWS_REPO }}
+    
   opencode-complete-gate:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
@@ -120,7 +129,8 @@ jobs:
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
-
+      WORKFLOWS_REPO: ${{ inputs.WORKFLOWS_REPO }}
+    
   opencode-plan-and-implement:
     if: |
       (github.event_name == 'workflow_dispatch' && (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor))) ||
@@ -133,3 +143,5 @@ jobs:
     with:
       ALLOWED_ACTORS: ${{ inputs.ALLOWED_ACTORS }}
       BYPASS_ACTOR_CHECK: ${{ inputs.BYPASS_ACTOR_CHECK }}
+      WORKFLOWS_REPO: ${{ inputs.WORKFLOWS_REPO }}
+    

@@ -11,6 +11,10 @@ on:
         type: string
         default: false
         required: false
+      WORKFLOWS_REPO:
+        type: string
+        default: 'apparts-js/ai-workflows'
+        required: false
     secrets:
       OPENCODE_API_KEY:
         required: true
@@ -45,7 +49,7 @@ jobs:
       - name: Checkout shared workflows
         uses: actions/checkout@v4
         with:
-          repository: apparts-js/ai-workflows
+          repository: ${{ inputs.WORKFLOWS_REPO }}
           path: .ai-workflows
           persist-credentials: false
 
@@ -123,7 +127,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/opencode-plan-and-implement.log ]; then
-            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-plan-and-implement.log "plan-and-implement"
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-plan-and-implement.log "plan-and-implement" || true
           fi
 
       - name: Re-add auto-review label

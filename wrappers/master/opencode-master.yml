@@ -42,3 +42,4 @@ jobs:
     with:
       ALLOWED_ACTORS: ${{ vars.ALLOWED_ACTORS || 'phuhl' }}
       BYPASS_ACTOR_CHECK: ${{ vars.BYPASS_ACTOR_CHECK || github.event.repository.private }}
+      WORKFLOWS_REPO: phuhl/ai-workflows-wip-repo
