@@ -267,7 +267,14 @@ jobs:
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: max
         run: |
-          opencode run --model opencode-go/deepseek-v4-pro "Load the resolve-pr-conflicts skill and run it for PR #${{ steps.meta.outputs.pr_number }}"
+          opencode run --model opencode-go/deepseek-v4-pro "Load the resolve-pr-conflicts skill and run it for PR #${{ steps.meta.outputs.pr_number }}" 2>&1 | tee /tmp/opencode-resolve-conflicts.log
+
+      - name: Extract token usage (resolve conflicts)
+        if: always()
+        run: |
+          if [ -f /tmp/opencode-resolve-conflicts.log ]; then
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-resolve-conflicts.log "resolve-pr-conflicts"
+          fi
 
       - name: Record autofix attempt (conflicts)
         if: steps.mergeable.outputs.has_conflicts == 'true' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true'
@@ -545,6 +552,13 @@ jobs:
         run: |
           opencode run --model opencode-go/deepseek-v4-pro "Load the plan-and-implement skill and run it for issue #${{ steps.completeness.outputs.issue_number }}" 2>&1 | tee /tmp/opencode-pai-gate.log
 
+      - name: Extract token usage (plan-and-implement gate)
+        if: always()
+        run: |
+          if [ -f /tmp/opencode-pai-gate.log ]; then
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-pai-gate.log "plan-and-implement-gate"
+          fi
+
       - name: Update progress comment — plan-and-implement completed
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'false'
         env:
@@ -589,6 +603,13 @@ jobs:
           VARIANT: max
         run: |
           opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ steps.meta.outputs.pr_number }} with context ci-failing" 2>&1 | tee /tmp/opencode-fix-pr-gate.log
+
+      - name: Extract token usage (fix-pr gate)
+        if: always()
+        run: |
+          if [ -f /tmp/opencode-fix-pr-gate.log ]; then
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-fix-pr-gate.log "fix-pr-gate"
+          fi
 
       - name: Update progress comment — fix-pr completed
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'failing' && steps.attempts.outputs.exhausted != 'true' && steps.validate.outputs.should_run == 'true' && steps.completeness.outputs.implementation_complete == 'true'
@@ -670,7 +691,14 @@ jobs:
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: high
         run: |
-          opencode run --model opencode-go/deepseek-v4-pro "Load the review-pr skill and run it for PR #${{ steps.meta.outputs.pr_number }}"
+          opencode run --model opencode-go/deepseek-v4-pro "Load the review-pr skill and run it for PR #${{ steps.meta.outputs.pr_number }}" 2>&1 | tee /tmp/opencode-review-pr-gate.log
+
+      - name: Extract token usage (review-pr gate)
+        if: always()
+        run: |
+          if [ -f /tmp/opencode-review-pr-gate.log ]; then
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-review-pr-gate.log "review-pr-gate"
+          fi
 
       - name: Promote PR to ready for review
         if: steps.mergeable.outputs.has_conflicts == 'false' && steps.ci.outputs.status == 'passing' && steps.validate.outputs.should_run == 'true'

@@ -1,6 +1,7 @@
 #!/usr/bin/env npx tsx
-import { readFileSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
+import { resolve, dirname, join } from "node:path";
+import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { allScenarios, scenarioNames } from "./scenarios/index";
 import { runScenario, printSummary, logHeader, logStep } from "./utils";
@@ -93,6 +94,149 @@ function resolveToken(env: Record<string, string>): void {
   }
 }
 
+function getGitInfo(): { hash: string; message: string } {
+  try {
+    const hash = execSync("git rev-parse --short HEAD", {
+      encoding: "utf-8",
+      cwd: resolve(__dirname, "../.."),
+    }).trim();
+    const message = execSync("git log -1 --format=%s", {
+      encoding: "utf-8",
+      cwd: resolve(__dirname, "../.."),
+    }).trim();
+    return { hash, message };
+  } catch {
+    return { hash: "unknown", message: "unknown" };
+  }
+}
+
+function printTokenUsageSummary(results: ScenarioResult[]): void {
+  const withTokens = results.filter(
+    (r) => r.tokenUsage && r.tokenUsage.length > 0,
+  );
+  if (withTokens.length === 0) return;
+
+  const sep = "=".repeat(60);
+  console.log(`\n${sep}`);
+  console.log("  Token Usage Summary (per scenario)");
+  console.log(sep);
+
+  let grandTotalTokens = 0;
+
+  for (const r of withTokens) {
+    const skills = r.tokenUsage!;
+    const scenarioTotal = skills.reduce((sum, s) => sum + s.total_tokens, 0);
+    grandTotalTokens += scenarioTotal;
+
+    console.log(`  ${r.name}: ${scenarioTotal.toLocaleString()} total tokens`);
+    for (const s of skills) {
+      const src = s.source === "estimated" ? " (est.)" : "";
+      console.log(
+        `    ${s.skill}: ${s.total_tokens.toLocaleString()} tokens${src}`,
+      );
+    }
+  }
+
+  // Aggregate by skill across all scenarios
+  const bySkill = new Map<
+    string,
+    { count: number; total: number; prompt: number; completion: number }
+  >();
+  for (const r of withTokens) {
+    for (const s of r.tokenUsage!) {
+      const existing = bySkill.get(s.skill);
+      if (existing) {
+        existing.count++;
+        existing.total += s.total_tokens;
+        existing.prompt += s.prompt_tokens;
+        existing.completion += s.completion_tokens;
+      } else {
+        bySkill.set(s.skill, {
+          count: 1,
+          total: s.total_tokens,
+          prompt: s.prompt_tokens,
+          completion: s.completion_tokens,
+        });
+      }
+    }
+  }
+
+  console.log("");
+  console.log("  Aggregate by skill:");
+  for (const [skill, stats] of [...bySkill.entries()].sort(
+    (a, b) => b[1].total - a[1].total,
+  )) {
+    const avg = Math.round(stats.total / stats.count);
+    console.log(
+      `    ${skill}: ${stats.total.toLocaleString()} total (${stats.count} runs, avg ${avg.toLocaleString()}/run)`,
+    );
+  }
+
+  console.log(
+    `\n  Grand total: ${grandTotalTokens.toLocaleString()} tokens across ${withTokens.length} scenario(s)`,
+  );
+  console.log(sep);
+}
+
+function appendTokenReport(results: ScenarioResult[]): void {
+  const withTokens = results.filter(
+    (r) => r.tokenUsage && r.tokenUsage.length > 0,
+  );
+  if (withTokens.length === 0) return;
+
+  const git = getGitInfo();
+  const reportDir = resolve(__dirname, "../../e2e-report");
+
+  try {
+    mkdirSync(reportDir, { recursive: true });
+  } catch {
+    // directory exists
+  }
+
+  const reportPath = join(reportDir, "token-usage.jsonl");
+
+  for (const r of withTokens) {
+    const skills = r.tokenUsage!;
+    const totalPrompt = skills.reduce((sum, s) => sum + s.prompt_tokens, 0);
+    const totalCompletion = skills.reduce(
+      (sum, s) => sum + s.completion_tokens,
+      0,
+    );
+    const totalTokens = skills.reduce((sum, s) => sum + s.total_tokens, 0);
+
+    const record = {
+      timestamp: new Date().toISOString(),
+      commit: git.hash,
+      commit_message: git.message,
+      scenario: r.name,
+      total_prompt_tokens: totalPrompt,
+      total_completion_tokens: totalCompletion,
+      total_tokens: totalTokens,
+      sources: skills.map((s) => s.source),
+      skills: skills.map((s) => ({
+        name: s.skill,
+        prompt_tokens: s.prompt_tokens,
+        completion_tokens: s.completion_tokens,
+        total_tokens: s.total_tokens,
+        source: s.source,
+      })),
+    };
+
+    try {
+      writeFileSync(reportPath, JSON.stringify(record) + "\n", {
+        flag: "a",
+      });
+    } catch {
+      console.log("  Warning: Could not write token usage report");
+    }
+  }
+
+  console.log(`\n  Token data appended to e2e-report/token-usage.jsonl`);
+  console.log(
+    `  Run 'npx tsx e2e-report/aggregate.ts' to see trends over time.`,
+  );
+}
+
 async function main() {
   const env = loadEnv();
   const { repo, scenarios, listOnly } = parseArgs();
@@ -139,6 +283,12 @@ async function main() {
   }
 
   printSummary(results);
+
+  // Print token usage summary
+  printTokenUsageSummary(results);
+
+  // Append token usage to e2e-report
+  appendTokenReport(results);
 
   const failed = results.filter((r) => !r.passed).length;
   if (failed > 0) {

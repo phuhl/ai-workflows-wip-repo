@@ -25,12 +25,21 @@ export interface ScenarioSpec {
   cleanup: (ctx: E2EContext) => Promise<void>;
 }
 
+export interface TokenUsageEntry {
+  skill: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  source: "opencode" | "estimated";
+}
+
 export interface ScenarioResult {
   name: string;
   passed: boolean;
   assertions: AssertionResult[];
   error?: string;
   durationMs: number;
+  tokenUsage?: TokenUsageEntry[];
 }
 
 export interface Comment {

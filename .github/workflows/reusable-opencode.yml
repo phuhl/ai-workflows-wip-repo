@@ -66,4 +66,12 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: max
-        run: opencode run --model opencode-go/deepseek-v4-pro "Handle the trigger event"
+        run: |
+          opencode run --model opencode-go/deepseek-v4-pro "Handle the trigger event" 2>&1 | tee /tmp/opencode-dispatcher.log
+
+      - name: Extract token usage
+        if: always()
+        run: |
+          if [ -f /tmp/opencode-dispatcher.log ]; then
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-dispatcher.log "dispatcher"
+          fi

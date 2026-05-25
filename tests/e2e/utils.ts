@@ -4,12 +4,14 @@ import type {
   E2EContext,
   AssertionResult,
   WorkflowRun,
+  TokenUsageEntry,
 } from "./types";
 import {
   getWorkflowRuns,
   getRunJobs,
   addResultLabel,
   postResultComment,
+  extractTokenUsage,
 } from "./engine";
 
 export function logHeader(text: string): void {
@@ -127,8 +129,9 @@ export async function runScenario(
       triggerTime,
       scenario.checkJob,
     );
+    const workflowRunId = startedRun.databaseId;
     logPass(
-      `Workflow run ${startedRun.databaseId} started (status: ${startedRun.status})`,
+      `Workflow run ${workflowRunId} started (status: ${startedRun.status})`,
     );
 
     let workflowConclusion: string | null = null;
@@ -176,6 +179,23 @@ export async function runScenario(
       logPass("Wait complete");
     }
 
+    let tokenUsage: TokenUsageEntry[] = [];
+    try {
+      logStep("Extracting token usage from workflow logs...");
+      tokenUsage = await extractTokenUsage(ctx.repo, workflowRunId);
+      if (tokenUsage.length > 0) {
+        for (const t of tokenUsage) {
+          logPass(
+            `Token usage — ${t.skill}: ${t.total_tokens.toLocaleString()} total tokens (${t.source})`,
+          );
+        }
+      } else {
+        logPass("No token usage data found in workflow logs");
+      }
+    } catch {
+      logPass("Token usage extraction not available");
+    }
+
     logStep("Running assertions...");
     const assertions = await scenario.assertions(ctx);
     for (const a of assertions) {
@@ -206,6 +226,7 @@ export async function runScenario(
       passed,
       assertions,
       durationMs: Date.now() - start,
+      tokenUsage: tokenUsage.length > 0 ? tokenUsage : undefined,
     };
   } catch (e) {
     const eMsg = e instanceof Error ? e.message : String(e);

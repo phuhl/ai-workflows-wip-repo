@@ -90,7 +90,14 @@ jobs:
         run: |
           PR="${{ github.event.issue.number || github.event.inputs.pr_number }}"
           COMMENT="${{ github.event.comment.id || github.event.inputs.comment_id }}"
-          opencode run --model opencode-go/deepseek-v4-pro "Load the review-pr skill and run it for PR #${PR} with comment ID ${COMMENT}"
+          opencode run --model opencode-go/deepseek-v4-pro "Load the review-pr skill and run it for PR #${PR} with comment ID ${COMMENT}" 2>&1 | tee /tmp/opencode-code-review.log
+
+      - name: Extract token usage
+        if: always()
+        run: |
+          if [ -f /tmp/opencode-code-review.log ]; then
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-code-review.log "code-review"
+          fi
 
       - name: React to triggering PR comment
         if: success() && github.event_name != 'workflow_dispatch'

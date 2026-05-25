@@ -143,6 +143,13 @@ jobs:
           opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ github.event.issue.number || github.event.inputs.pr_number }} with context ${{ steps.context.outputs.context }}" 2>&1 | tee /tmp/opencode-fix-pr.log
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
+      - name: Extract token usage
+        if: always()
+        run: |
+          if [ -f /tmp/opencode-fix-pr.log ]; then
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-fix-pr.log "fix-pr"
+          fi
+
       - name: Post error comment on failure
         if: steps.fix_pr.outputs.exit_code != '0'
         env:

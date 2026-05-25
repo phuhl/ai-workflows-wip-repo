@@ -59,4 +59,11 @@ jobs:
           VARIANT: max
         run: |
           ISSUE="${{ github.event.issue.number || github.event.inputs.issue_number }}"
-          opencode run --model opencode-go/deepseek-v4-pro "Load the plan skill and run it for issue #${ISSUE}"
+          opencode run --model opencode-go/deepseek-v4-pro "Load the plan skill and run it for issue #${ISSUE}" 2>&1 | tee /tmp/opencode-plan.log
+
+      - name: Extract token usage
+        if: always()
+        run: |
+          if [ -f /tmp/opencode-plan.log ]; then
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-plan.log "plan"
+          fi

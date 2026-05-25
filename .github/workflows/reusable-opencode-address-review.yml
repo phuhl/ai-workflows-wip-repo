@@ -121,8 +121,15 @@ jobs:
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: max
         run: |
-          opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ github.event.pull_request.number || github.event.issue.number || github.event.inputs.pr_number }} with context review-comments" 2>&1 | tee /tmp/opencode-fix-pr.log
+          opencode run --model opencode-go/deepseek-v4-pro "Load the fix-pr skill and run it for PR #${{ github.event.pull_request.number || github.event.issue.number || github.event.inputs.pr_number }} with context review-comments" 2>&1 | tee /tmp/opencode-address-review.log
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract token usage
+        if: always()
+        run: |
+          if [ -f /tmp/opencode-address-review.log ]; then
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-address-review.log "address-review"
+          fi
 
       - name: Post error comment on failure
         if: steps.fix_pr.outputs.exit_code != '0'
@@ -132,7 +139,7 @@ jobs:
           REPO: ${{ github.repository }}
           COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
         run: |
-          ERROR_TAIL=$(tail -n 20 /tmp/opencode-fix-pr.log 2>/dev/null || echo "No log captured")
+          ERROR_TAIL=$(tail -n 20 /tmp/opencode-address-review.log 2>/dev/null || echo "No log captured")
           BODY=$(printf '%b' "❌ **OpenCode address-review encountered an error**\n\n\`\`\`\n${ERROR_TAIL}\n\`\`\`\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
           if [ -n "$COMMENT_ID" ]; then
             gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY" || true

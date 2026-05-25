@@ -1,5 +1,11 @@
 import { execSync } from "node:child_process";
-import type { Comment, PrInfo, WorkflowRun, CheckRun } from "./types";
+import type {
+  Comment,
+  PrInfo,
+  WorkflowRun,
+  CheckRun,
+  TokenUsageEntry,
+} from "./types";
 
 function gh(args: string, opts?: { cwd?: string; stdin?: string }): string {
   try {
@@ -179,6 +185,37 @@ export function getWorkflowRunLog(repo: string, runId: number): string {
     return gh(`run view ${runId} --repo ${repo} --log`, { cwd: undefined });
   } catch {
     return "";
+  }
+}
+
+export function parseTokenUsageFromLog(log: string): TokenUsageEntry[] {
+  const entries: TokenUsageEntry[] = [];
+  const regex =
+    /OPENCODE_TOKEN_USAGE:skill=([^:]+):prompt=(\d+):completion=(\d+):total=(\d+):source=(opencode|estimated)/g;
+
+  let match;
+  while ((match = regex.exec(log)) !== null) {
+    entries.push({
+      skill: match[1],
+      prompt_tokens: parseInt(match[2], 10),
+      completion_tokens: parseInt(match[3], 10),
+      total_tokens: parseInt(match[4], 10),
+      source: match[5] as "opencode" | "estimated",
+    });
+  }
+
+  return entries;
+}
+
+export async function extractTokenUsage(
+  repo: string,
+  runId: number,
+): Promise<TokenUsageEntry[]> {
+  try {
+    const log = getWorkflowRunLog(repo, runId);
+    return parseTokenUsageFromLog(log);
+  } catch {
+    return [];
   }
 }
 
