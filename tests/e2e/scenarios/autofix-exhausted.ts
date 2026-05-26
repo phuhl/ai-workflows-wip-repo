@@ -3,6 +3,7 @@ import {
   addPrLabel,
   getPrLabels,
   getPrComments,
+  getPrCommitCount,
   closePr,
   deleteBranch,
   getPr,
@@ -82,6 +83,14 @@ describe("broken", () => {
       assert(
         attemptLabels.length > 0 && labels.includes("autofix-exhausted"),
         "autofix-attempts-3 label is present alongside autofix-exhausted",
+      ),
+    );
+
+    const commitCount = await getPrCommitCount(ctx.repo, ctx.prNumber!);
+    results.push(
+      assert(
+        commitCount === 1,
+        `autofix-exhausted produces no additional commits (setup: 1, current: ${commitCount})`,
       ),
     );
 

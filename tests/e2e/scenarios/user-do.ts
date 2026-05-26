@@ -3,6 +3,7 @@ import {
   createIssue,
   commentOnIssue,
   getIssueComments,
+  getPrForIssue,
   closeIssue,
   safeCleanup,
 } from "../engine";
@@ -75,6 +76,14 @@ export const userDo: ScenarioSpec = {
       (c) => isBot(c.author) && c.body.includes("encountered an error"),
     );
     results.push(assert(!errorComment, "No error comment from bot"));
+
+    const pr = await getPrForIssue(ctx.repo, ctx.issueNumber!);
+    results.push(
+      assert(
+        pr === null,
+        "/oc do for analysis-only prompt did not create a PR",
+      ),
+    );
 
     return results;
   },

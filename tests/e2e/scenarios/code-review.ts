@@ -2,6 +2,7 @@ import type { ScenarioSpec, E2EContext } from "../types";
 import {
   commentOnIssue,
   getPrComments,
+  getPrCommitCount,
   closePr,
   deleteBranch,
   getPr,
@@ -76,6 +77,14 @@ export function greet(name: string): string {
       (c) => isBot(c.author) && c.body.includes("encountered an error"),
     );
     results.push(assert(!errorComment, "No error comment from bot"));
+
+    const commitCount = await getPrCommitCount(ctx.repo, ctx.prNumber!);
+    results.push(
+      assert(
+        commitCount === 1,
+        `code-review push no additional commits (initial: 1, current: ${commitCount})`,
+      ),
+    );
 
     return results;
   },

@@ -279,6 +279,17 @@ export function deleteBranch(repo: string, branch: string): void {
   gh(`api repos/${repo}/git/refs/heads/${branch} -X DELETE`);
 }
 
+export function getPrCommitCount(repo: string, prNumber: number): number {
+  try {
+    const result = gh(
+      `pr view ${prNumber} --repo ${repo} --json commits -q '.commits | length'`,
+    );
+    return parseInt(result, 10) || 0;
+  } catch {
+    return -1;
+  }
+}
+
 export async function closeIssue(
   repo: string,
   issueNumber: number,
