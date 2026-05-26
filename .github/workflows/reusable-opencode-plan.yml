@@ -18,6 +18,10 @@ on:
     secrets:
       OPENCODE_API_KEY:
         required: true
+      APP_ID:
+        required: true
+      APP_PRIVATE_KEY:
+        required: true
 
 jobs:
   opencode-plan:
@@ -29,13 +33,21 @@ jobs:
        (inputs.BYPASS_ACTOR_CHECK || contains(inputs.ALLOWED_ACTORS, github.actor)))
     runs-on: ubuntu-latest
     permissions:
+      pull-requests: write
+      contents: write
       issues: write
-      contents: read
     steps:
+      - name: Generate App Token
+        id: app_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app_token.outputs.token }}
 
       - name: Checkout shared workflows
         uses: actions/checkout@v4
@@ -57,7 +69,7 @@ jobs:
 
       - name: Run plan skill
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_DISABLE_EXTERNAL_SKILLS: "true"
           VARIANT: max
