@@ -192,11 +192,7 @@ export async function runScenario(
     let tokenUsage: TokenUsageEntry[] = [];
     try {
       logStep("Extracting token usage from workflow logs...");
-      tokenUsage = await extractTokenUsage(
-        ctx.repo,
-        workflowRunId,
-        scenario.checkJob,
-      );
+      tokenUsage = await extractTokenUsage(ctx.repo, workflowRunId);
       if (tokenUsage.length > 0) {
         for (const t of tokenUsage) {
           logPass(

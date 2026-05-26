@@ -1,4 +1,5 @@
 import { execSync } from "node:child_process";
+import { inflateRawSync } from "node:zlib";
 import type {
   Comment,
   PrInfo,
@@ -182,32 +183,55 @@ export function getRunJobs(
   }
 }
 
-export function getWorkflowRunLogFromJob(
-  repo: string,
-  runId: number,
-  checkJob?: string,
-): string {
+export function getWorkflowRunLog(repo: string, runId: number): string {
   try {
-    const jobs = getRunJobs(repo, runId);
-    const targetJobs = checkJob
-      ? jobs.filter((j) => j.name.includes(checkJob))
-      : jobs;
-
-    let combinedLog = "";
-    for (const job of targetJobs) {
-      try {
-        combinedLog += gh(`api "repos/${repo}/actions/jobs/${job.id}/logs"`, {
-          cwd: undefined,
-        });
-        combinedLog += "\n";
-      } catch {
-        // skip jobs whose logs are expired/inaccessible
-      }
-    }
-    return combinedLog;
+    // gh run view --log can fail for sub-workflow runs; use raw API zip
+    const zipData = execSync(
+      `gh api "repos/${repo}/actions/runs/${runId}/logs" --jq '.' 2>/dev/null || true`,
+      { encoding: "buffer", maxBuffer: 50 * 1024 * 1024 },
+    );
+    if (zipData.length === 0) return "";
+    return extractTextFilesFromZip(zipData);
   } catch {
     return "";
   }
+}
+
+function extractTextFilesFromZip(zipData: Buffer): string {
+  let result = "";
+  let offset = 0;
+  while (offset < zipData.length - 4) {
+    // Find local file header signature PK\x03\x04
+    if (
+      zipData[offset] !== 0x50 ||
+      zipData[offset + 1] !== 0x4b ||
+      zipData[offset + 2] !== 0x03 ||
+      zipData[offset + 3] !== 0x04
+    ) {
+      offset++;
+      continue;
+    }
+    const compMethod = zipData.readUInt16LE(offset + 8);
+    const compSize = zipData.readUInt32LE(offset + 18);
+    const fileNameLen = zipData.readUInt16LE(offset + 26);
+    const extraLen = zipData.readUInt16LE(offset + 28);
+    const fileDataStart = offset + 30 + fileNameLen + extraLen;
+
+    if (compSize > 0 && fileDataStart + compSize <= zipData.length) {
+      const raw = zipData.subarray(fileDataStart, fileDataStart + compSize);
+      try {
+        if (compMethod === 8) {
+          result += inflateRawSync(raw).toString("utf-8");
+        } else if (compMethod === 0) {
+          result += raw.toString("utf-8");
+        }
+      } catch {
+        // skip corrupted entries
+      }
+    }
+    offset = fileDataStart + compSize;
+  }
+  return result;
 }
 
 export function parseTokenUsageFromLog(log: string): TokenUsageEntry[] {
@@ -232,10 +256,9 @@ export function parseTokenUsageFromLog(log: string): TokenUsageEntry[] {
 export async function extractTokenUsage(
   repo: string,
   runId: number,
-  checkJob?: string,
 ): Promise<TokenUsageEntry[]> {
   try {
-    const log = getWorkflowRunLogFromJob(repo, runId, checkJob);
+    const log = getWorkflowRunLog(repo, runId);
     return parseTokenUsageFromLog(log);
   } catch {
     return [];
