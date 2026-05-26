@@ -6,6 +6,11 @@ Merge base one final time, post an implementation summary as a PR comment (leavi
 ## Prerequisites
 - All subtasks are checked.
 - Self-check is clean (no `must-fix` items).
+- Verify that actual commits were pushed by checking the log since the merge-base:
+  ```bash
+  git log --format='- %s' $(git merge-base origin/master HEAD)..HEAD --no-merges | head -5
+  ```
+  If no commits exist, do **not** post an implementation summary claiming changes were made. Report the issue instead.
 
 ## Steps
 
