@@ -37,6 +37,13 @@ gh api "repos/<repo>/pulls/<pr-number>/comments" \
 
 Filter to bot comments only: `jq 'select(.user | test("\\[bot\\]" or "/app"))' <comment-file>`.
 
+The bot identity varies depending on the token used:
+- GitHub App token → `<app-name>[bot]` (e.g. `apparts-ai-workflow[bot]`)
+- Built-in `GITHUB_TOKEN` → `github-actions[bot]`
+- Git committer (never the commenting identity) → `opencode[bot]`
+
+Always use the `[bot]` suffix or `/app` pattern for detection. Never hardcode a specific bot name. Do not rely on `IS_BOT` from GH API — check the author login string.
+
 ### Check each bot comment
 
 For each bot comment (author matching `[bot]` or `app/`), run these checks:
