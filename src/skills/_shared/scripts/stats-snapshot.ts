@@ -6,6 +6,7 @@ interface StatsSnapshot {
   output: number;
   cache_read: number;
   cache_write: number;
+  timestamp: number;
 }
 
 const USAGE =
@@ -20,6 +21,7 @@ function main(): void {
     process.exit(1);
   }
 
+  snapshot.timestamp = Date.now();
   const json = JSON.stringify(snapshot);
   console.log(json);
 
@@ -67,6 +69,7 @@ function parseStats(text: string): StatsSnapshot | null {
     output: parseNumber(output?.[1]),
     cache_read: parseNumber(cacheRead?.[1]),
     cache_write: parseNumber(cacheWrite?.[1]),
+    timestamp: 0,
   };
 }
 

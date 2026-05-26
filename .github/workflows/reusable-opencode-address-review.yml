@@ -136,7 +136,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/opencode-address-review.log ]; then
-            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "address-review" || true
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "address-review" --model opencode-go/deepseek-v4-pro --variant max || true
           fi
 
       - name: Post error comment on failure

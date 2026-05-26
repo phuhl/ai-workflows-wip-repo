@@ -92,5 +92,5 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/opencode-dispatcher.log ]; then
-            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "dispatcher" || true
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "dispatcher" --model opencode-go/deepseek-v4-pro --variant max || true
           fi

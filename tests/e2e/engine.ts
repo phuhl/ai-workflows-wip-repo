@@ -261,18 +261,47 @@ function extractTextFilesFromZip(zipData: Buffer): string {
 
 export function parseTokenUsageFromLog(log: string): TokenUsageEntry[] {
   const entries: TokenUsageEntry[] = [];
-  const regex =
-    /OPENCODE_TOKEN_USAGE:skill=([^:]+):prompt=(\d+):completion=(\d+):total=(\d+):source=(opencode|estimated)/g;
+  const regex = /OPENCODE_TOKEN_USAGE:([^\n]+)/g;
 
   let match;
   while ((match = regex.exec(log)) !== null) {
-    entries.push({
-      skill: match[1],
-      prompt_tokens: parseInt(match[2], 10),
-      completion_tokens: parseInt(match[3], 10),
-      total_tokens: parseInt(match[4], 10),
-      source: match[5] as "opencode" | "estimated",
-    });
+    const fields = match[1].split(":");
+    const entry: Partial<TokenUsageEntry> = {};
+    for (const field of fields) {
+      const eq = field.indexOf("=");
+      if (eq < 0) continue;
+      const key = field.slice(0, eq);
+      const val = field.slice(eq + 1);
+      switch (key) {
+        case "skill":
+          entry.skill = val;
+          break;
+        case "prompt":
+          entry.prompt_tokens = parseInt(val, 10) || 0;
+          break;
+        case "completion":
+          entry.completion_tokens = parseInt(val, 10) || 0;
+          break;
+        case "total":
+          entry.total_tokens = parseInt(val, 10) || 0;
+          break;
+        case "source":
+          entry.source = val as "opencode" | "estimated";
+          break;
+        case "model":
+          entry.model = val;
+          break;
+        case "variant":
+          entry.variant = val;
+          break;
+        case "duration_ms":
+          entry.duration_ms = parseInt(val, 10) || 0;
+          break;
+      }
+    }
+    if (entry.skill && entry.source) {
+      entries.push(entry as TokenUsageEntry);
+    }
   }
 
   return entries;

@@ -281,7 +281,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/opencode-resolve-conflicts.log ]; then
-            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "resolve-pr-conflicts" || true
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "resolve-pr-conflicts" --model opencode-go/deepseek-v4-pro --variant max || true
           fi
 
       - name: Record autofix attempt (conflicts)
@@ -564,7 +564,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/opencode-pai-gate.log ]; then
-            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "plan-and-implement-gate" || true
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "plan-and-implement-gate" --model opencode-go/deepseek-v4-pro --variant max || true
           fi
 
       - name: Update progress comment — plan-and-implement completed
@@ -616,7 +616,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/opencode-fix-pr-gate.log ]; then
-            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "fix-pr-gate" || true
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "fix-pr-gate" --model opencode-go/deepseek-v4-pro --variant max || true
           fi
 
       - name: Update progress comment — fix-pr completed
@@ -705,7 +705,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/opencode-review-pr-gate.log ]; then
-            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "review-pr-gate" || true
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "review-pr-gate" --model opencode-go/deepseek-v4-pro --variant high || true
           fi
 
       - name: Promote PR to ready for review

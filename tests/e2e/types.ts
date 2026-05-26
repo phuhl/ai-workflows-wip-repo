@@ -31,6 +31,9 @@ export interface TokenUsageEntry {
   completion_tokens: number;
   total_tokens: number;
   source: "opencode" | "estimated";
+  model?: string;
+  variant?: string;
+  duration_ms?: number;
 }
 
 export interface ScenarioResult {

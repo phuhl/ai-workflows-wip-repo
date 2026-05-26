@@ -193,7 +193,7 @@ export async function runScenario(
       if (tokenUsage.length > 0) {
         for (const t of tokenUsage) {
           logPass(
-            `Token usage — ${t.skill}: ${t.total_tokens.toLocaleString()} total tokens (${t.source})`,
+            `Token usage — ${t.skill}: ${t.total_tokens.toLocaleString()} total tokens (${t.source})${t.model ? ` | ${t.model}` : ""}${t.variant ? ` (${t.variant})` : ""}${t.duration_ms ? ` | ${(t.duration_ms / 1000).toFixed(1)}s` : ""}`,
           );
         }
       } else {

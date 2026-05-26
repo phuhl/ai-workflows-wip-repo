@@ -3,7 +3,7 @@ import { runStats, parseStats, StatsSnapshot } from "./stats-snapshot";
 
 const USAGE =
   "Usage: extract-token-usage <log-file> <skill-name>\n" +
-  "       extract-token-usage --delta <skill-name>";
+  "       extract-token-usage --delta <skill-name> [--model <m>] [--variant <v>]";
 
 interface TokenUsage {
   skill: string;
@@ -11,6 +11,7 @@ interface TokenUsage {
   completion_tokens: number;
   total_tokens: number;
   source: "opencode" | "estimated";
+  duration_ms?: number;
 }
 
 const STATS_FILE = "/tmp/opencode-stats.json";
@@ -19,6 +20,15 @@ function main(): void {
   const deltaMode = process.argv[2] === "--delta";
   const logFile = deltaMode ? undefined : process.argv[2];
   const skillName = deltaMode ? process.argv[3] : process.argv[3];
+
+  // Parse optional --model and --variant from remaining args
+  let model: string | undefined;
+  let variant: string | undefined;
+  const args = process.argv.slice(deltaMode ? 4 : 4);
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--model" && args[i + 1]) model = args[++i];
+    if (args[i] === "--variant" && args[i + 1]) variant = args[++i];
+  }
 
   if ((!deltaMode && !logFile) || !skillName) {
     console.error(USAGE);
@@ -49,7 +59,19 @@ function main(): void {
     }
   }
 
-  const structuredLine = `OPENCODE_TOKEN_USAGE:skill=${usage.skill}:prompt=${usage.prompt_tokens}:completion=${usage.completion_tokens}:total=${usage.total_tokens}:source=${usage.source}`;
+  const fields = [
+    `skill=${usage.skill}`,
+    `prompt=${usage.prompt_tokens}`,
+    `completion=${usage.completion_tokens}`,
+    `total=${usage.total_tokens}`,
+    `source=${usage.source}`,
+  ];
+  if (model) fields.push(`model=${model}`);
+  if (variant) fields.push(`variant=${variant}`);
+  if (usage.duration_ms != null)
+    fields.push(`duration_ms=${usage.duration_ms}`);
+
+  const structuredLine = `OPENCODE_TOKEN_USAGE:${fields.join(":")}`;
   console.log(structuredLine);
   console.log(JSON.stringify(usage));
 }
@@ -60,6 +82,8 @@ function extractFromStats(skillName: string): TokenUsage {
   if (!current) {
     return fallbackZero(skillName);
   }
+
+  current.timestamp = Date.now();
 
   let prev: StatsSnapshot | null = null;
   if (existsSync(STATS_FILE)) {
@@ -77,6 +101,11 @@ function extractFromStats(skillName: string): TokenUsage {
     // non-fatal
   }
 
+  const durationMs =
+    prev && prev.timestamp
+      ? Math.max(0, current.timestamp - prev.timestamp)
+      : undefined;
+
   if (!prev) {
     return {
       skill: skillName,
@@ -84,6 +113,7 @@ function extractFromStats(skillName: string): TokenUsage {
       completion_tokens: current.output,
       total_tokens: current.input + current.output,
       source: "opencode",
+      duration_ms: durationMs,
     };
   }
 
@@ -96,6 +126,7 @@ function extractFromStats(skillName: string): TokenUsage {
     completion_tokens: completion,
     total_tokens: prompt + completion,
     source: "opencode",
+    duration_ms: durationMs,
   };
 }
 
