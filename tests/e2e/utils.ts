@@ -144,21 +144,18 @@ export async function runScenario(
     const pollPromise = (async () => {
       while (true) {
         await sleep(60_000);
+        // Check only the specific run that verifyRunStarted confirmed
         const runs = await getWorkflowRuns(ctx.repo, "master");
-        const relevantRuns = runs.filter(
-          (r) =>
-            r.name === "OpenCode" &&
-            new Date(r.createdAt).getTime() > triggerTime.getTime() &&
-            !(
-              r.status === "completed" &&
-              (r.conclusion === "skipped" || r.conclusion === "cancelled")
-            ),
+        const current = runs.find(
+          (r) => r.databaseId === startedRun.databaseId,
         );
-        if (relevantRuns.length === 0) continue;
-
-        const latest = relevantRuns[0];
-        if (latest.status === "completed" && latest.conclusion !== "skipped") {
-          workflowConclusion = latest.conclusion;
+        if (!current) continue;
+        if (
+          current.status === "completed" &&
+          current.conclusion !== "skipped" &&
+          current.conclusion !== "cancelled"
+        ) {
+          workflowConclusion = current.conclusion;
           return "workflow" as const;
         }
       }
