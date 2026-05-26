@@ -51,8 +51,15 @@ export function postReviewReply(
     repo = repoResult.stdout.trim();
   }
 
+  const runId = process.env.GITHUB_RUN_ID;
+
+  let runLink = "";
+  if (runId && repo) {
+    runLink = `\n\n[Run ${runId}](https://github.com/${repo}/actions/runs/${runId})`;
+  }
+
   const payload = {
-    body,
+    body: body + runLink,
     in_reply_to: inReplyToCommentId,
   };
 

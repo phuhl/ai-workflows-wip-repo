@@ -8,16 +8,23 @@ export function postReviewComment(
   side: string,
   body: string,
 ): void {
+  const runId = process.env.GITHUB_RUN_ID;
+  const repo = process.env.GITHUB_REPOSITORY || process.env.GH_REPO || "";
+
+  let runLink = "";
+  if (runId && repo) {
+    runLink = `\n\n[Run ${runId}](https://github.com/${repo}/actions/runs/${runId})`;
+  }
+
   const payload = {
     commit_id: commitId,
     path: filePath,
-    body,
+    body: body + runLink,
     line,
     side,
   };
 
   const json = JSON.stringify(payload);
-  const repo = process.env.GITHUB_REPOSITORY || process.env.GH_REPO || "";
 
   if (!repo) {
     throw new Error("Missing repo context — set GITHUB_REPOSITORY or GH_REPO");
