@@ -187,7 +187,7 @@ export function getWorkflowRunLog(repo: string, runId: number): string {
   try {
     // gh run view --log can fail for sub-workflow runs; use raw API zip
     const zipData = execSync(
-      `gh api "repos/${repo}/actions/runs/${runId}/logs" --jq '.' 2>/dev/null || true`,
+      `gh api "repos/${repo}/actions/runs/${runId}/logs"`,
       { encoding: "buffer", maxBuffer: 50 * 1024 * 1024 },
     );
     if (zipData.length === 0) return "";
@@ -211,11 +211,31 @@ function extractTextFilesFromZip(zipData: Buffer): string {
       offset++;
       continue;
     }
+    const flags = zipData.readUInt16LE(offset + 6);
     const compMethod = zipData.readUInt16LE(offset + 8);
-    const compSize = zipData.readUInt32LE(offset + 18);
+    let compSize = zipData.readUInt32LE(offset + 18);
+    const uncompSize = zipData.readUInt32LE(offset + 22);
     const fileNameLen = zipData.readUInt16LE(offset + 26);
     const extraLen = zipData.readUInt16LE(offset + 28);
     const fileDataStart = offset + 30 + fileNameLen + extraLen;
+
+    // Streaming zip: size stored in trailing data descriptor, not header
+    if (compSize === 0 && uncompSize === 0 && flags & 0x0008) {
+      // Scan forward for next PK signature or data descriptor
+      let scan = fileDataStart;
+      while (scan < zipData.length - 4) {
+        if (
+          zipData[scan] === 0x50 &&
+          zipData[scan + 1] === 0x4b &&
+          (zipData[scan + 2] === 0x03 || zipData[scan + 2] === 0x07)
+        ) {
+          compSize = scan - fileDataStart;
+          break;
+        }
+        scan++;
+      }
+      if (compSize === 0) compSize = zipData.length - fileDataStart;
+    }
 
     if (compSize > 0 && fileDataStart + compSize <= zipData.length) {
       const raw = zipData.subarray(fileDataStart, fileDataStart + compSize);
