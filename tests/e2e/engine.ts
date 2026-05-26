@@ -184,17 +184,22 @@ export function getRunJobs(
 }
 
 export function getWorkflowRunLog(repo: string, runId: number): string {
-  try {
-    // gh run view --log can fail for sub-workflow runs; use raw API zip
-    const zipData = execSync(
-      `gh api "repos/${repo}/actions/runs/${runId}/logs"`,
-      { encoding: "buffer", maxBuffer: 50 * 1024 * 1024 },
-    );
-    if (zipData.length === 0) return "";
-    return extractTextFilesFromZip(zipData);
-  } catch {
-    return "";
+  // Logs may not be available immediately after run completes; retry
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const zipData = execSync(
+        `gh api "repos/${repo}/actions/runs/${runId}/logs"`,
+        { encoding: "buffer", maxBuffer: 50 * 1024 * 1024 },
+      );
+      if (zipData.length > 0) return extractTextFilesFromZip(zipData);
+    } catch {
+      // 404 or other error, retry after delay
+    }
+    if (attempt < 4) {
+      execSync(`sleep ${Math.pow(2, attempt) * 3}`);
+    }
   }
+  return "";
 }
 
 function extractTextFilesFromZip(zipData: Buffer): string {
