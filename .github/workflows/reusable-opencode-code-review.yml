@@ -119,12 +119,22 @@ jobs:
           REPO: ${{ github.repository }}
           COMMENT_ID: ${{ steps.progress_comment.outputs.comment_id }}
         run: |
+          FINDINGS=""
+          if [ -f /tmp/review-findings-count ]; then
+            FINDINGS_COUNT=$(cat /tmp/review-findings-count)
+            if [ "$FINDINGS_COUNT" -gt 0 ] 2>/dev/null; then
+              FINDINGS=" — ${FINDINGS_COUNT} comment(s) added"
+            else
+              FINDINGS=" — no issues found"
+            fi
+          fi
+
           if [ "${{ job.status }}" == "success" ]; then
-            STATUS="✅ **OpenCode code-review finished**"
+            STATUS="✅ **OpenCode code-review finished**${FINDINGS}"
           elif [ "${{ job.status }}" == "failure" ]; then
-            STATUS="❌ **OpenCode code-review failed**"
+            STATUS="❌ **OpenCode code-review failed**${FINDINGS}"
           else
-            STATUS="⚠️ **OpenCode code-review ended**"
+            STATUS="⚠️ **OpenCode code-review ended**${FINDINGS}"
           fi
           BODY=$(printf '%b' "${STATUS}\n\n[Run ${{ github.run_id }}](https://github.com/${REPO}/actions/runs/${{ github.run_id }})")
           gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" \
