@@ -5,6 +5,7 @@ import {
   getPrForIssue,
   getPrLabels,
   getPrFiles,
+  getPrCommitCount,
   getIssueComments,
   closeIssue,
   deleteBranch,
@@ -78,6 +79,15 @@ export const happyPath: ScenarioSpec = {
     // Source file was changed
     results.push(
       assert(files.includes("src/add.ts"), "src/add.ts was modified"),
+    );
+
+    // Bot added commits implementing the feature
+    const commitCount = await getPrCommitCount(ctx.repo, ctx.prNumber!);
+    results.push(
+      assert(
+        commitCount > 0,
+        `PR has ${commitCount} commit(s) implementing the feature`,
+      ),
     );
 
     // No files in protected directories

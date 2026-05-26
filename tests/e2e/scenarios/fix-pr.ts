@@ -2,6 +2,7 @@ import type { ScenarioSpec, E2EContext } from "../types";
 import {
   commentOnIssue,
   getPrComments,
+  getPrCommitCount,
   closePr,
   deleteBranch,
   getPr,
@@ -90,6 +91,26 @@ describe("greet", () => {
         "Bot did not fabricate change summaries with no review comments",
       ),
     );
+
+    const commitCount = await getPrCommitCount(ctx.repo, ctx.prNumber!);
+    const claimsChanges = comments.find(
+      (c) => isBot(c.author) && c.body.includes("Changes made"),
+    );
+    if (claimsChanges) {
+      results.push(
+        assert(
+          commitCount > 1,
+          `PR has ${commitCount} commit(s) — bot claimed changes, verified commits exist`,
+        ),
+      );
+    } else {
+      results.push(
+        assert(
+          commitCount >= 1,
+          `PR has ${commitCount} commit(s) (at minimum the setup commit)`,
+        ),
+      );
+    }
 
     return results;
   },

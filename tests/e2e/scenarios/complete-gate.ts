@@ -3,6 +3,7 @@ import {
   addPrLabel,
   getPrComments,
   getPrLabels,
+  getPrCommitCount,
   closePr,
   deleteBranch,
   getPr,
@@ -107,6 +108,14 @@ export function add(a: number, b: number): number {
       (c) => isBot(c.author) && c.body.includes("encountered an error"),
     );
     results.push(assert(!errorComment, "No error comment from bot"));
+
+    const commitCount = await getPrCommitCount(ctx.repo, ctx.prNumber!);
+    results.push(
+      assert(
+        commitCount >= 1,
+        `PR has ${commitCount} commit(s) (at minimum the setup commit)`,
+      ),
+    );
 
     return results;
   },

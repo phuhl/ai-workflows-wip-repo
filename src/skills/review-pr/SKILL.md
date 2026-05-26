@@ -100,6 +100,12 @@ The goal is to keep the review focused on the feature at hand. Do **not** post a
 
 ## Finalize
 
+Count the total number of inline review comments posted and write it to a temp file so the workflow can include it in the status update:
+
+```bash
+echo <count> > /tmp/review-findings-count
+```
+
 - If **no findings** were posted:
   - Promote PR to ready for review:
     ```bash

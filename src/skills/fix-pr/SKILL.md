@@ -107,3 +107,13 @@ Read `src/skills/_shared/references/git-safety.md`.
 ## After fixing
 
 Push your changes after each fix (the reference files handle this per-item). The auto-review gate workflow will monitor CI and re-invoke you if further fixes are needed. **Do not run tests locally.**
+
+## Verification
+
+Before finishing, verify that actual commits were pushed. If no changes were needed or all attempts to fix failed, report that honestly rather than fabricating a "Changes made" summary.
+
+```bash
+git log --format='- %s' $(git merge-base origin/master HEAD)..HEAD --no-merges | head -5
+```
+
+If this produces no output, do **not** claim to have made changes. Instead, explain why no changes were made (e.g., "CI is failing for reasons beyond code changes", "Review comments are already addressed", or "Fix attempt failed"). The workflow detection is a safety net; your honest reporting is the first line of defense.
