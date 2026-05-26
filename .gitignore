@@ -3,3 +3,8 @@ node_modules/
 todos.org
 .env
 e2e-report/
+
+#emacs backup files
+*~
+*\#
+.\#*
