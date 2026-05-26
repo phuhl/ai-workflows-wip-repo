@@ -103,6 +103,10 @@ jobs:
       - name: Install OpenCode
         run: npm install -g opencode-ai@1.14.24
 
+
+      - name: Initialize stats snapshot
+        run: |
+          opencode db --format json 'SELECT SUM(tokens_input) as input, SUM(tokens_output) as output, SUM(tokens_reasoning) as reasoning, SUM(tokens_cache_read) as cache_read, SUM(tokens_cache_write) as cache_write FROM session WHERE project_id = (SELECT id FROM project WHERE directory = "$(pwd)")' > /tmp/opencode-stats.json 2>/dev/null || echo '{"input":0,"output":0,"reasoning":0,"cache_read":0,"cache_write":0}' > /tmp/opencode-stats.json
       - name: Pre-fetch PR context (if PR exists)
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}
@@ -127,7 +131,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/opencode-plan-and-implement.log ]; then
-            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts /tmp/opencode-plan-and-implement.log "plan-and-implement" || true
+            npx tsx .opencode/skills/_shared/scripts/extract-token-usage.ts --delta "plan-and-implement" || true
           fi
 
       - name: Re-add auto-review label
