@@ -40,7 +40,15 @@ PROMPT=$(cat .opencode/do-prompt.txt 2>/dev/null || echo "$ARGUMENTS")
    ```bash
    npx tsx src/skills/_shared/scripts/format-and-commit.ts "<descriptive message>" <specific-files>
    ```
-5. **After finishing**, post a brief comment summarizing what was done.
+5. **After finishing**, post a brief comment summarizing what was done. Include the workflow run link so the user can trace back to the run:
+   ```bash
+   RUN_ID="${GITHUB_RUN_ID}"
+   REPO="${GITHUB_REPOSITORY}"
+   gh issue comment "$NUMBER" --body "Summary of what was done.
+
+   [Run ${RUN_ID}](https://github.com/${REPO}/actions/runs/${RUN_ID})"
+   ```
+   (If `$GITHUB_RUN_ID` is not set, omit the run link from the comment.)
 
 6. **Run self-check audits** on the changes you made:
 
