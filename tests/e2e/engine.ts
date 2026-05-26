@@ -170,19 +170,41 @@ export function getWorkflowRun(
 export function getRunJobs(
   repo: string,
   runId: number,
-): Array<{ name: string; conclusion: string | null }> {
+): Array<{ id: number; name: string; conclusion: string | null }> {
   try {
-    return ghJson<Array<{ name: string; conclusion: string | null }>>(
-      `run view ${runId} --repo ${repo} --json jobs --jq '.jobs | map({name, conclusion})'`,
+    return ghJson<
+      Array<{ id: number; name: string; conclusion: string | null }>
+    >(
+      `run view ${runId} --repo ${repo} --json jobs --jq '.jobs | map({id, name, conclusion})'`,
     );
   } catch {
     return [];
   }
 }
 
-export function getWorkflowRunLog(repo: string, runId: number): string {
+export function getWorkflowRunLogFromJob(
+  repo: string,
+  runId: number,
+  checkJob?: string,
+): string {
   try {
-    return gh(`run view ${runId} --repo ${repo} --log`, { cwd: undefined });
+    const jobs = getRunJobs(repo, runId);
+    const targetJobs = checkJob
+      ? jobs.filter((j) => j.name.includes(checkJob))
+      : jobs;
+
+    let combinedLog = "";
+    for (const job of targetJobs) {
+      try {
+        combinedLog += gh(`api "repos/${repo}/actions/jobs/${job.id}/logs"`, {
+          cwd: undefined,
+        });
+        combinedLog += "\n";
+      } catch {
+        // skip jobs whose logs are expired/inaccessible
+      }
+    }
+    return combinedLog;
   } catch {
     return "";
   }
@@ -210,9 +232,10 @@ export function parseTokenUsageFromLog(log: string): TokenUsageEntry[] {
 export async function extractTokenUsage(
   repo: string,
   runId: number,
+  checkJob?: string,
 ): Promise<TokenUsageEntry[]> {
   try {
-    const log = getWorkflowRunLog(repo, runId);
+    const log = getWorkflowRunLogFromJob(repo, runId, checkJob);
     return parseTokenUsageFromLog(log);
   } catch {
     return [];

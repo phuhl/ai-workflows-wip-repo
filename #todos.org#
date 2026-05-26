@@ -1,0 +1,90 @@
+- [X] On /oc fix-pr: If it did not work, put sensible error into comment
+- [X] For the implement skill: the skill should write a short summary of 5 bullet points, each at most 200 chars long (verify this via script) and add this to the PR comment. Also, instruct the model to read the comments of the PR before doing implementation. This should prevent redoing the same errors as before. Also instruct the model to write comments on pieces of code that might be misunderstood/flagged but that are like this for a good reason. Make also sure the skill reads comments on the issue.
+- [X] Add /oc plan: It should read an issue and the code and then add a comment that provides a concise plan with risk analysis and options.
+- [X] Make sure that the implement skill resolves or comments each PR comment that is directly on a code line. After this skill has run, there should be no comment on the code that has not been addressed either by pushing back or by implementing and commenting. This should also be verified by a script and be part of a todo list
+- [X] Plan and implement skill: **When writing code that could be misunderstood** — This should be commented in the code, not as a PR comment.
+- [X] Currently the plan and implement skill summary is put into the first comment of the PR. This is an issue as there is currently no comment "Closing #123" which prevents the linking of PR to issue. Instead, each implementation (not just test stubs) should add a new comment.
+- [X] Stacking of PRs does not work. I left comments on issues that said, the PR should be stacked on another PR, but it was just created on base instead.
+- [X] Prettier is not consistenlty run in address-review. Make sure this is happening in all the appropriate places. Otherwise this just wastes cycles of the AI for something very easy
+- [X] We added prettier to the after coding steps, the model should also do the linting and fix that directly
+- [X] When /oc fix-pr is called by comment, we currently don't fix the review comments. Let's implement /oc address-review to do that
+- [X] The todo gate checks currently if status checks are passing or not. It intentionally does not query required status checks. Validate if this is still needed or if we have the ability to request these now. The issue is, that without knowing what is required, we can mislabel a PR as CI passing when the required status check is not reported on, yet
+- [X] Make the fix-pr skill create a todo list for each review item (i.e. each  code comment on the PR, that is not either unresolved or answered by the ai [identified by the comment creator]. Also, the main thread comments should be considered). This is supposed to solve the issue, that the address-review skill skips some comments on the code, as it currently does. Also, let's defer loading of the different modes in the fix-pr skill into reference files.
+- [X] Add a skill that checks the recent changes for unnecessary code duplication. It must check against the existing unchanged code base, too and make suggestions to the caller which sections should be deduplicated. Sometimes it is a judgment call if something should be duplicated or not. In these cases it should give a very short pro/contra reasoning and leave the decision to the caller. It should be called from the plan-and-implement skill self-check section together with the other audit skills (they should run in parallel agents).
+- [X] The /oc do command creates a comment on start up. This comment should already include the github action run id with link. Make sure that all these initial comments in all workflows actually have the action run id with link in them and also in the final comment.
+- [X] Add a hooks to all skill calls that change code. The hook should on file save run prettier -w and linter and tsc --noEmit. It should not prevent from writing a file, only return the results to inform the caller what might have gone wrong.
+- [X] One of the workflows commited all of the ai-workflow skills to the PR. Make sure, that neither any skills/plugins/workflows or similar related to the ai-workflow repository are commited. This should be done in a deterministic way somehow. Make a suggestion how this can be resolved. Maybe a commit based hook?
+- [X] Verify that all "Create progress comments" and similar include the action run id in the comment for all workflows.
+- [X] There was an instance where I added a review comment on code, it got fixed by the address-review skill and correctly commented on and than a later run of address-review "unfixed" it without any comment. Analyze what we can do to prevent this behavior.
+- [X] I found this line in the logs: "The verification script is checking for `opencode[bot]` replies but this repo's bot is `apparts-ai-workflow[bot]`. Let me fix the script first". Fix this.
+- [X] Prettification and linting fail due to missing package installation. It should call npm run ci:prettier etc. but instead it calls prettier via npx (version missmatch). eslint dependencies also missing despite beeing in package json of target repo: 
+  $ npx prettier --write src/postgresql/Query.ts && npx eslint src/postgresql/Query.ts && npx tsc --noEmit
+  src/postgresql/Query.ts 203ms (unchanged)
+  
+  Oops! Something went wrong! :(
+  
+  ESLint: 10.4.0
+  
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'eslint-plugin-jest' imported from /home/runner/work/apparts-db/apparts-db/eslint.config.mjs
+- [X] There seems to be an issue with calling one of the comment writing scripts, the model does not invoke it, but instead uses gh api directly (address-review in this case):
+  $ gh api "repos/{owner}/{repo}/pulls/26/comments" -f body="Addressed in commit: fix: handle limit=0 and offset without limit in Pagination" -f in_reply_to=3273042213
+  {"message":"Invalid request.\n\nNo subschema in \"oneOf\" matched.\n\"positioning\" wasn't supplied.\n\"commit_id\", \"path\", \"position\" weren't supplied.\nFor 'properties/in_reply_to', \"3273042213\" is not a number.\n\"in_reply_to\" is not a permitted key.\n\"commit_id\", \"line\", \"path\" weren't supplied.\n\"in_reply_to\" is not a permitted key.\n\"commit_id\", \"path\", \"subject_type\" weren't supplied.","documentation_url":"https://docs.github.com/rest/pulls/comments#create-a-review-comment-for-a-pull-request","status":"422"}gh: Invalid request.
+  
+  No subschema in "oneOf" matched.
+  "positioning" wasn't supplied.
+  "commit_id", "path", "position" weren't supplied.
+  For 'properties/in_reply_to', "3273042213" is not a number.
+  "in_reply_to" is not a permitted key.
+  "commit_id", "line", "path" weren't supplied.
+  "in_reply_to" is not a permitted key.
+  "commit_id", "path", "subject_type" weren't supplied. (HTTP 422)
+- [X] Change all shell scripts to ts scripts for better reliability.
+- [X] I often receive a lot of valid review comments thanks to the review-pr skill running after commits. But ideally, these would have been caught when code has been implemented, so that I wouldn't have to trigger /oc address-review manually. Check, where after writing code we might not do a good code review or where we are leaking review results.
+- [X] Before we implement anything (in all the relevant implement skills), can we generate a summary of the issue, it's comments and the pr and it's comments? The summary should be created in it's own context, to not pollute the main context. It should point out gotchas, previous work and discussions. It's purpose is to guide the model to do the right thing: don't repeat errors that were done in previous runs, etc.
+- [X] The fix-pr skill does not do any of the self-checks. Let's change this. Let's make sure, every skill that changes code runs all of the self checks after. Let's move the self checks to shared skills.
+- [X] Create a list of all /oc commands in the README and a short explanation of what they do
+- [X] Plan and implement does not produce very good plan checklist. It often is very generic. It should contain a detailed plan (it can also make use of indentation/sub check boxes). The checklist must contain the mandatory check boxes, but it should also contain task specific ones
+- [X] Did you build the context file based workflow in such a way, that the all the relevant workflow files call a setup script which fetches the github comments and then uses opencode to generate the context summary before the actual opencode command starts? If not, how is the flow working?
+- [X] 1a yes, 1b, yes but by extracting logic to ts and testing that.
+- [X] Can we work with a dummy repo, that a tester model has access to? The model could create issues, read/edit/comment on PRs and read the action executions. The model would need specific test cases and verify for each of them, that everything worked as expected. That way we could surface structural issues (skills not beeing called, permission issues, etc)
+- [X] Build a skill that runs the tests and evaluates the results. It should check:
+  - All workflow runs have the appropriate comments (including run id, url)
+  - No comment spam -> "starts running" comments are updated when run finished, key summary is within this comment (if any posted at all)
+  - Every comment posted has a run id-link for easy debugging
+  - Comments are well formatted (e.g. no literal /n)
+  - Make sure that you verify everything worked correctly by looking at the action run logs. Things that should be counted as test failures include failed github api calls, wrongly formatted comments, permission issues, gh comments fetched by run instead of using the review-context.md file (except there is a good reason to refetch), tools not installed by workflow
+  - Verify there are no infinite loops and that the state machine is not getting stuck
+  - The skill should take a scenario and return a report that says if passed or not, if not what was wrong. The skill should run in it's own forked context. The skill should clean up after itself: Close issues and PRs. The skill should be able to run in parallel. The skill should take a prompt, that the caller can use to explain certain specific changes that the skill shoul check for.
+- [X] We should separate the skills that we develop for the ai-workflow repo itsself and skills that will be consumed by the target repo. These should probably live more in a src folder or similar
+- [X] Make sure to copy a version of the plugins that might benefit this repository. You can update them to make sense for this repo (e.g. other files excluded, etc.)
+- [ ] There seem to be issues with the test cases themselfs:
+  - Lot's of open issues left
+  - Some issues have strange issue descriptions: e.g. #26 has incomplete sentence "Please add a function that returns to ."
+- [X] The typescript code in this repository seems to have a lot of type issues. Make sure that tsc --noEmit is part of the test suite
+- [X] Look at https://github.com/phuhl/ai-workflows-test-repo/pull/85, there the review comments suggest that a fix was implemented, but no commits are visible. What happened?
+- [X] Let's improve the comments, the workflows produce. The goal is to reduce the amount of comments without removing any of the information.
+  - We want to update the status comments instead of creating multiple comments per run
+    - E.g. Complete gate with autofix exhaustion currently produces two comments. Only one of multiple examples. Look at all workflows to identify these.
+  - When the complete gate does not find any issues and sets the PR to ready for review, this is not reflected in its comment. But the comment should basically say: "No issues found, setting to ready for human review" or something like that.
+  - Every comment posted should ALWAYS have the run id with a link to the action run at the end.
+  - This type of comment: "CI is failing. Triggered fix-pr (attempt 0 of 3)." It should have more detail after the run finished. What was done? It should be at max 5 bullet points (use script to verify)
+- [X] Update the e2e tests to add a "failing" or "passing" label to issues/prs that have been created in the testing github repo so I can more easily review the logic. Also post a final comment on the respective PR/Issue that explains why something failed if failing
+- [ ] Comments are still very strange... look at https://github.com/phuhl/ai-workflows-test-repo/pull/96
+- [ ] Minor issues I spotted that we still need to address
+  - Code Comment does not include workflow run Id link: https://github.com/phuhl/ai-workflows-test-repo/pull/124
+  - "✅ OpenCode code-review finished" comment should also mention something like "3 comments added" or "no issues found"
+  - https://github.com/phuhl/ai-workflows-test-repo/pull/123 claims fixes but no commits have been added
+  - Make sure that all the test cases also check for the presence of commits. Some scenarios should have added commits, others should not produce additional commits.
+  - Make sure that the verify-e2e skill reads all the automatically posted comments to identify potentially broken/non-sensical ones.
+  - The /oc do command posts a comment without workflow run id link. It should probably use a script to post comments that adds this.
+
+
+Ideas:
+- Run different models against each other in playground repository.
+  - Find metrics to judge them by:
+    - Token usage/cost (lower is better)
+    - time spend (lower is better)
+    - #comments generated (lower is better)
+    - code works (verified by preexisting test)
+    - code quality (verified by model)
+  - Requires good set of test issues to measure performance for each type of skill
