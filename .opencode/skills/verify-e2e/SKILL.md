@@ -99,7 +99,7 @@ For each workflow run triggered by the scenario, verify the following. Read `.op
 
 ### 2a. Comment quality
 
-For every bot comment posted on the issue/PR:
+Fetch all bot comments from the issue/PR involved in the scenario (see `references/deep-check.md` for the fetch commands and filtering instructions). Then verify:
 
 - **Run ID link**: Every progress comment must contain a link to the GitHub Actions run (e.g. `https://github.com/<repo>/actions/runs/<run_id>`). The link enables one-click debugging.
 - **Update, don't spam**: "starts running" / "is processing" / "in progress" comments must be **updated** (via `gh api PATCH`) when the run finishes, not left stale. A single thread should contain the full lifecycle. Check that an initial progress comment exists and that a later update (or final status) is present.

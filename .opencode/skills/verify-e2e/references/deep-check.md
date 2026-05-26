@@ -17,6 +17,28 @@ gh run view <run-id> --repo <repo> --log 2>/dev/null
 
 ## Comment quality checks
 
+### Fetching all bot comments
+
+Before checking comment quality, fetch all comments from every issue and PR involved in the scenario:
+
+```bash
+# Fetch issue comments
+gh api "repos/<repo>/issues/<issue-number>/comments" \
+  --jq '.[] | {id, body, user: .user.login, created_at}' --paginate > /tmp/e2e-issue-comments.json
+
+# Fetch PR conversation comments (also via issues endpoint)
+gh api "repos/<repo>/issues/<pr-number>/comments" \
+  --jq '.[] | {id, body, user: .user.login, created_at}' --paginate > /tmp/e2e-pr-comments.json
+
+# Fetch PR review comments (inline diff comments)
+gh api "repos/<repo>/pulls/<pr-number>/comments" \
+  --jq '.[] | {id, body, user: .user.login, created_at}' --paginate > /tmp/e2e-review-comments.json
+```
+
+Filter to bot comments only: `jq 'select(.user | test("\\[bot\\]" or "/app"))' <comment-file>`.
+
+### Check each bot comment
+
 For each bot comment (author matching `[bot]` or `app/`), run these checks:
 
 ### Check 1: Run ID link present
